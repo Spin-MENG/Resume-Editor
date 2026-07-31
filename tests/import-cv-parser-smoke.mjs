@@ -62,6 +62,7 @@ vm.runInContext(`
   globalThis.parseCv = (text) => buildSnapshotFromCvText(text);
   ${pdfLineImplementation}
   globalThis.pdfLines = (items) => pdfItemsToLines(items);
+  globalThis.collectPdfText = (page) => createPdfTextContentTask(page).promise;
 `, sandbox);
 
 const sample = `
@@ -134,5 +135,29 @@ assert.equal(sandbox.pdfLines([
   { str: "Work", transform: [1, 0, 0, 10, 0, 100], width: 24, height: 10 },
   { str: "Experience", transform: [1, 0, 0, 10, 28, 100], width: 50, height: 10 }
 ])[0], "Work Experience");
+
+const streamChunks = [
+  { lang: "en", styles: { f1: { fontFamily: "sans-serif" } }, items: [{ str: "Hello" }] },
+  { lang: null, styles: {}, items: [{ str: "world" }] }
+];
+let streamChunkIndex = 0;
+const textWithoutAsyncIterator = await sandbox.collectPdfText({
+  streamTextContent() {
+    return {
+      getReader() {
+        return {
+          async read() {
+            if (streamChunkIndex >= streamChunks.length) return { done: true, value: undefined };
+            return { done: false, value: streamChunks[streamChunkIndex++] };
+          },
+          releaseLock() {},
+          async cancel() {}
+        };
+      }
+    };
+  }
+});
+assert.deepEqual(Array.from(textWithoutAsyncIterator.items, (item) => item.str), ["Hello", "world"]);
+assert.equal(textWithoutAsyncIterator.lang, "en");
 
 console.log("CV import parser smoke test passed");

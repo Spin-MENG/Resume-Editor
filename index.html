@@ -2122,6 +2122,44 @@
           .filter(Boolean);
       }
 
+      function createPdfTextContentTask(page) {
+        if (typeof page.streamTextContent !== "function") {
+          return {
+            promise: page.getTextContent({ normalizeWhitespace: true }),
+            cancel() {}
+          };
+        }
+        const readableStream = page.streamTextContent({ disableNormalization: false });
+        const reader = readableStream.getReader();
+        const promise = (async () => {
+          const textContent = {
+            items: [],
+            styles: Object.create(null),
+            lang: null
+          };
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (!value) continue;
+            textContent.lang ??= value.lang;
+            Object.assign(textContent.styles, value.styles || {});
+            if (Array.isArray(value.items)) textContent.items.push(...value.items);
+          }
+          return textContent;
+        })().finally(() => {
+          try { reader.releaseLock(); } catch (error) {}
+        });
+        return {
+          promise,
+          cancel() {
+            try {
+              const cancellation = reader.cancel(new Error("pdf-page-timeout"));
+              cancellation?.catch?.(() => {});
+            } catch (error) {}
+          }
+        };
+      }
+
       async function extractTextFromPdf(file, runId) {
         setCvImportProgress("正在加载 PDF 组件…", runId);
         const pdfModuleCandidates = [
@@ -2170,11 +2208,15 @@
           for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
             setCvImportProgress(`正在解析 PDF ${pageNumber}/${pdf.numPages}…`, runId);
             const page = await withTimeout(pdf.getPage(pageNumber), pdfPageTimeoutMs, "pdf-page-timeout");
+            const textContentTask = createPdfTextContentTask(page);
             const content = await withTimeout(
-              page.getTextContent({ normalizeWhitespace: true }),
+              textContentTask.promise,
               pdfPageTimeoutMs,
               "pdf-page-timeout",
-              () => page.cleanup()
+              () => {
+                textContentTask.cancel();
+                page.cleanup();
+              }
             );
             pages.push(pdfItemsToLines(content.items).join("\n"));
             page.cleanup();
