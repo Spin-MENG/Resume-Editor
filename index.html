@@ -244,6 +244,119 @@
       background: #30373d;
     }
 
+    .toolbar-button:disabled {
+      cursor: wait;
+      opacity: 0.62;
+      transform: none;
+    }
+
+    .cv-import-dialog {
+      width: min(760px, calc(100vw - 28px));
+      max-height: min(780px, calc(100vh - 28px));
+      margin: auto;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(21, 25, 29, 0.16);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(20, 25, 30, 0.28);
+      color: var(--ink);
+    }
+
+    .cv-import-dialog::backdrop {
+      background: rgba(25, 31, 36, 0.56);
+      backdrop-filter: blur(3px);
+    }
+
+    .cv-import-card {
+      display: flex;
+      max-height: min(780px, calc(100vh - 28px));
+      flex-direction: column;
+    }
+
+    .cv-import-header {
+      padding: 19px 22px 15px;
+      border-bottom: 1px solid #e1e5e8;
+    }
+
+    .cv-import-title {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .cv-import-subtitle {
+      margin: 6px 0 0;
+      color: #68727a;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .cv-import-body {
+      min-height: 0;
+      padding: 16px 22px;
+      overflow: auto;
+    }
+
+    .cv-import-file {
+      margin: 0 0 9px;
+      color: #30383f;
+      font-size: 12px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .cv-import-summary {
+      margin: 0 0 12px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: #f3f6f7;
+      color: #4f5b64;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .cv-import-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #343c43;
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .cv-import-text {
+      width: 100%;
+      min-height: 300px;
+      padding: 11px 12px;
+      resize: vertical;
+      border: 1px solid #cfd5d9;
+      border-radius: 8px;
+      background: #fbfcfc;
+      color: #20262b;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .cv-import-text:focus {
+      border-color: var(--focus);
+      outline: 3px solid rgba(191, 123, 54, 0.17);
+    }
+
+    .cv-import-notice {
+      margin: 10px 0 0;
+      color: #7a5a32;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .cv-import-actions {
+      padding: 14px 22px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      border-top: 1px solid #e1e5e8;
+      background: #fafbfb;
+    }
+
     .workspace {
       width: 100%;
       padding: 28px 16px 64px;
@@ -530,6 +643,55 @@
       page-break-inside: avoid;
     }
 
+    .resume-section--empty {
+      display: none;
+    }
+
+    .resume-item--empty,
+    .editable-line--empty {
+      display: none;
+    }
+
+    @media screen {
+      .resume-body:hover > .resume-section--empty,
+      .resume-body:focus-within > .resume-section--empty {
+        display: block;
+        min-height: 6mm;
+        padding: 1.2mm 0;
+        border: 0.25mm dashed #c6ccd0;
+        border-radius: 1mm;
+        color: #7a838a;
+        cursor: pointer;
+        text-align: center;
+      }
+
+      .resume-section--empty::before {
+        content: "＋ 添加 " attr(data-empty-label);
+        font-size: 0.92em;
+        font-weight: 650;
+      }
+
+      .resume-section:hover > .resume-item--empty,
+      .resume-section:focus-within > .resume-item--empty {
+        display: block;
+        opacity: 0.34;
+      }
+
+      .resume-item:hover .editable-line--empty,
+      .resume-item:focus-within .editable-line--empty,
+      .resume-section:hover > .skill-list .editable-line--empty,
+      .resume-section:focus-within > .skill-list .editable-line--empty {
+        display: list-item;
+        min-height: 1em;
+        opacity: 0.34;
+      }
+
+      .resume-item:hover .coursework.editable-line--empty,
+      .resume-item:focus-within .coursework.editable-line--empty {
+        display: block;
+      }
+    }
+
     .section-title {
       margin: 0 0 1.35mm;
       padding-bottom: 0.85mm;
@@ -747,6 +909,16 @@
         flex: 1;
       }
 
+      .cv-import-header,
+      .cv-import-body,
+      .cv-import-actions {
+        padding-inline: 15px;
+      }
+
+      .cv-import-text {
+        min-height: 240px;
+      }
+
       .screen-note {
         align-items: flex-start;
         flex-direction: column;
@@ -778,6 +950,7 @@
       .screen-note,
       .photo-panel,
       .photo-edit-badge,
+      .cv-import-dialog,
       .toast-region {
         display: none !important;
       }
@@ -942,6 +1115,11 @@
         break-inside: avoid;
         page-break-inside: avoid;
       }
+
+      .resume-item--empty,
+      .editable-line--empty {
+        display: none !important;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -978,10 +1156,13 @@
           <input id="fontScale" type="range" min="90" max="115" step="1" value="100" aria-label="调整简历整体字号">
           <output id="fontScaleValue" for="fontScale">100%</output>
         </label>
+        <button class="toolbar-button" id="importCvButton" type="button" title="支持 PDF、DOCX、TXT 和 Markdown；文件只在当前浏览器中解析">导入已有 CV</button>
+        <button class="toolbar-button" id="undoCvImportButton" type="button" hidden>撤销导入</button>
         <button class="toolbar-button" id="importDraftButton" type="button">导入草稿</button>
         <button class="toolbar-button" id="exportDraftButton" type="button">导出草稿</button>
         <button class="toolbar-button" id="resetButton" type="button">恢复模板</button>
         <button class="toolbar-button toolbar-button--primary" id="exportButton" type="button" title="打开系统打印窗口并另存为 PDF">导出 PDF</button>
+        <input id="cvInput" type="file" accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" hidden>
         <input id="draftInput" type="file" accept="application/json,.json" hidden>
       </div>
     </div>
@@ -1103,10 +1284,30 @@
     </article>
 
     <div class="screen-note" aria-hidden="true">
-      <p>默认导出单页 A4；选择“自动分页”后，可在系统打印窗口自选页码。草稿只保存在当前浏览器，使用“导出草稿”可备份。</p>
+      <p>可导入 PDF、DOCX、TXT 或 Markdown CV；默认导出单页 A4，选择“自动分页”后可自选页码。文件和草稿只在当前浏览器处理。</p>
       <p class="keyboard-hint"><kbd>⌘/Ctrl</kbd> + <kbd>P</kbd> 也可导出</p>
     </div>
   </main>
+
+  <dialog class="cv-import-dialog" id="cvImportDialog" aria-labelledby="cvImportTitle">
+    <div class="cv-import-card">
+      <header class="cv-import-header">
+        <h2 class="cv-import-title" id="cvImportTitle">导入已有 CV</h2>
+        <p class="cv-import-subtitle">请先检查自动提取的文字。你可以在下方直接修正，再导入到简历模板。</p>
+      </header>
+      <div class="cv-import-body">
+        <p class="cv-import-file" id="cvImportFileName"></p>
+        <p class="cv-import-summary" id="cvImportSummary" role="status"></p>
+        <label class="cv-import-label" for="cvImportText">提取到的 CV 正文</label>
+        <textarea class="cv-import-text" id="cvImportText" spellcheck="false"></textarea>
+        <p class="cv-import-notice">PDF 双栏排版可能出现阅读顺序错乱；内容较多时会合并到最后一个可用条目。导入后请检查事实、栏目归类和一页 A4 排版。</p>
+      </div>
+      <footer class="cv-import-actions">
+        <button class="toolbar-button" id="cvImportCancelButton" type="button">取消</button>
+        <button class="toolbar-button toolbar-button--primary" id="cvImportApplyButton" type="button">导入并覆盖正文</button>
+      </footer>
+    </div>
+  </dialog>
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
@@ -1118,6 +1319,7 @@
       const storagePrefix = `public-resume-editor:${version}`;
       const contentStorageKey = `${storagePrefix}:content`;
       const photoStorageKey = `${storagePrefix}:photo`;
+      const cvImportBackupStorageKey = `${storagePrefix}:pre-cv-import`;
       const printModeStorageKey = "public-resume-editor:print-mode";
       const fontScaleStorageKey = "public-resume-editor:font-scale";
       const baseResumeFontPt = 8.05;
@@ -1132,9 +1334,18 @@
       const fontScaleValue = document.getElementById("fontScaleValue");
       const resetButton = document.getElementById("resetButton");
       const exportButton = document.getElementById("exportButton");
+      const importCvButton = document.getElementById("importCvButton");
+      const undoCvImportButton = document.getElementById("undoCvImportButton");
       const importDraftButton = document.getElementById("importDraftButton");
       const exportDraftButton = document.getElementById("exportDraftButton");
+      const cvInput = document.getElementById("cvInput");
       const draftInput = document.getElementById("draftInput");
+      const cvImportDialog = document.getElementById("cvImportDialog");
+      const cvImportFileName = document.getElementById("cvImportFileName");
+      const cvImportSummary = document.getElementById("cvImportSummary");
+      const cvImportText = document.getElementById("cvImportText");
+      const cvImportCancelButton = document.getElementById("cvImportCancelButton");
+      const cvImportApplyButton = document.getElementById("cvImportApplyButton");
       const toastRegion = document.getElementById("toastRegion");
       const editables = [...document.querySelectorAll("[data-edit-id]")];
 
@@ -1152,11 +1363,20 @@
       let contentSaveTimer = 0;
       let pageCheckTimer = 0;
       let statusResetTimer = 0;
+      let cvPreviewTimer = 0;
       let photoState = { src: "", zoom: 1, x: 0, y: 0 };
       let dragState = null;
       let suppressPhotoClick = false;
+      let pendingCvFileName = "";
+      let cvImportBackup = null;
       const initialContent = new Map(editables.map((node) => [node.dataset.editId, node.innerHTML]));
       const allowedInlineTags = new Set(["BR", "STRONG", "B", "EM", "I"]);
+      const externalLibraryLoads = new Map();
+      const externalLibrarySources = new Map();
+      const externalLibraryObjectUrls = new Map();
+      const maxCvFileBytes = 15 * 1024 * 1024;
+      const maxCvTextCharacters = 120000;
+      const maxPdfPages = 30;
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -1230,7 +1450,10 @@
           const saved = JSON.parse(localStorage.getItem(contentStorageKey) || "null");
           if (!saved || typeof saved !== "object") return;
           const appliedCount = applyContentSnapshot(saved);
-          if (appliedCount) setSaveMessage("已恢复上次编辑内容", true);
+          if (appliedCount) {
+            syncEmptyResumeSections();
+            setSaveMessage("已恢复上次编辑内容", true);
+          }
         } catch (error) {
           localStorage.removeItem(contentStorageKey);
         }
@@ -1266,6 +1489,68 @@
         showToast("草稿文件已导出。");
       }
 
+      function readCvImportBackup() {
+        if (cvImportBackup?.content) return cvImportBackup;
+        try {
+          const saved = JSON.parse(localStorage.getItem(cvImportBackupStorageKey) || "null");
+          if (saved?.content && typeof saved.content === "object") cvImportBackup = saved;
+        } catch (error) {
+          localStorage.removeItem(cvImportBackupStorageKey);
+        }
+        return cvImportBackup;
+      }
+
+      function updateUndoCvImportAvailability() {
+        undoCvImportButton.hidden = !readCvImportBackup();
+      }
+
+      function saveCvImportBackup() {
+        cvImportBackup = {
+          content: getContentSnapshot(),
+          settings: {
+            printMode: printMode.value,
+            fontScale: Number(fontScale.value) || 100
+          }
+        };
+        try {
+          localStorage.setItem(cvImportBackupStorageKey, JSON.stringify(cvImportBackup));
+        } catch (error) {
+          // The in-memory backup still works until the page is closed.
+        }
+        updateUndoCvImportAvailability();
+      }
+
+      function clearCvImportBackup() {
+        cvImportBackup = null;
+        try { localStorage.removeItem(cvImportBackupStorageKey); } catch (error) {}
+        undoCvImportButton.hidden = true;
+      }
+
+      function undoCvImport() {
+        const backup = readCvImportBackup();
+        if (!backup) {
+          updateUndoCvImportAvailability();
+          showToast("没有可撤销的 CV 导入记录。");
+          return;
+        }
+        const confirmed = window.confirm("撤销导入会恢复导入前的正文，并丢弃导入后的修改。确认继续吗？");
+        if (!confirmed) return;
+        applyContentSnapshot(backup.content);
+        if (backup.settings?.printMode) {
+          const mode = applyPrintMode(backup.settings.printMode);
+          try { localStorage.setItem(printModeStorageKey, mode); } catch (error) {}
+        }
+        if (backup.settings?.fontScale) {
+          const scale = applyFontScale(backup.settings.fontScale);
+          try { localStorage.setItem(fontScaleStorageKey, String(scale)); } catch (error) {}
+        }
+        syncEmptyResumeSections();
+        saveContentNow();
+        clearCvImportBackup();
+        queuePageCheck();
+        showToast("已恢复到导入 CV 之前的版本。");
+      }
+
       function readTextFile(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -1274,6 +1559,676 @@
           reader.readAsText(file);
         });
       }
+
+      function escapeResumeText(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function cleanImportedLine(value) {
+        return String(value ?? "")
+          .replace(/^\s{0,3}#{1,6}\s+/, "")
+          .replace(/^\s*(?:[-*+]|[•●▪◦‣⁃])\s+/, "")
+          .replace(/\*\*([^*]+)\*\*/g, "$1")
+          .replace(/__([^_]+)__/g, "$1")
+          .replace(/^([*_])(.+)\1$/, "$2")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function importedLinesToHtml(lines, joinWithBreaks = true) {
+        const cleaned = lines.map((line) => cleanImportedLine(line)).filter(Boolean);
+        return cleaned.map(escapeResumeText).join(joinWithBreaks ? "<br>" : " ");
+      }
+
+      function lineWithOptionalLabel(value) {
+        const text = cleanImportedLine(value);
+        const match = text.match(/^([^:：]{1,32})([:：])\s*(.+)$/);
+        if (!match) return escapeResumeText(text);
+        return `<strong>${escapeResumeText(match[1])}${match[2]}</strong> ${escapeResumeText(match[3])}`;
+      }
+
+      function getSemanticResumeSlots() {
+        const editId = (node) => node?.dataset?.editId || "";
+        const sectionSlots = (titleId) => {
+          const section = document.getElementById(titleId)?.closest(".resume-section");
+          return {
+            section,
+            title: editId(section?.querySelector(".section-title[data-edit-id]")),
+            items: [...(section?.querySelectorAll(".resume-item") || [])].map((item) => ({
+              heading: editId(item.querySelector(".item-heading[data-edit-id]")),
+              meta: editId(item.querySelector(".item-meta[data-edit-id]")),
+              bullets: [...item.querySelectorAll(".detail-list [data-edit-id]")].map(editId).filter(Boolean),
+              extra: [...item.querySelectorAll(".coursework[data-edit-id]")].map(editId).filter(Boolean)
+            }))
+          };
+        };
+
+        const profileSection = document.getElementById("profile-title")?.closest(".resume-section");
+        const skillsSection = document.getElementById("skills-title")?.closest(".resume-section");
+        return {
+          name: editId(document.querySelector('[data-edit-id="name"]')),
+          headline: editId(document.querySelector('[data-edit-id="headline"]')),
+          contact: editId(document.querySelector('[data-edit-id="contact"]')),
+          profile: {
+            section: profileSection,
+            title: editId(profileSection?.querySelector(".section-title[data-edit-id]")),
+            body: editId(profileSection?.querySelector(".section-copy[data-edit-id]"))
+          },
+          experience: sectionSlots("experience-title"),
+          education: sectionSlots("education-title"),
+          projects: sectionSlots("research-title"),
+          skills: {
+            section: skillsSection,
+            title: editId(skillsSection?.querySelector(".section-title[data-edit-id]")),
+            lines: [...(skillsSection?.querySelectorAll(".skill-list [data-edit-id]") || [])].map(editId).filter(Boolean)
+          }
+        };
+      }
+
+      const cvSectionDefinitions = [
+        {
+          key: "profile",
+          pattern: /^(?:(?:(?:professional|career|personal)\s+)?(?:summary|profile|objective|overview)|about\s+me|个人简介|个人概况|职业概述|职业目标|求职目标|自我评价)$/i
+        },
+        {
+          key: "experience",
+          pattern: /^(?:(?:(?:professional|work|employment|career|internship)\s+)?(?:experience|history)|工作经历|工作经验|职业经历|实习经历|任职经历)$/i
+        },
+        {
+          key: "education",
+          pattern: /^(?:education|academic\s+(?:background|history)|qualifications?|学历|教育背景|教育经历|学术背景)$/i
+        },
+        {
+          key: "projects",
+          pattern: /^(?:(?:(?:selected|key|relevant)\s+)?(?:projects?|research|publications?|portfolio|case\s+stud(?:y|ies)|projects?\s*\/\s*research)|project\s+experience|research\s+experience|项目经历|项目经验|科研经历|研究经历|论文|发表论文|作品集)$/i
+        },
+        {
+          key: "skills",
+          pattern: /^(?:(?:(?:technical|professional|core)\s+)?(?:skills?|competenc(?:y|ies)|expertise|technologies)|languages|awards?|honou?rs?|certifications?|licenses?|skills?\s*(?:&|and|\/|、)\s*(?:awards?|interests?)|技能|专业技能|核心能力|语言能力|语言|获奖经历|荣誉奖项|证书|资质证书)$/i
+        }
+      ];
+      const cvExtraSectionPattern = /^(?:leadership|volunteer(?:ing)?|community\s+service|activities|memberships?|interests?|additional\s+information|references|领导力|志愿者经历|志愿服务|社会实践|社团经历|校园活动|兴趣爱好|其他信息)$/i;
+
+      function identifyCvSectionHeading(value) {
+        const heading = cleanImportedLine(value).replace(/[：:]$/, "").trim();
+        if (!heading || heading.length > 56) return null;
+        return cvSectionDefinitions.find((definition) => definition.pattern.test(heading))?.key || null;
+      }
+
+      function parseImportedCvLines(text) {
+        return String(text ?? "")
+          .normalize("NFKC")
+          .replace(/\r\n?/g, "\n")
+          .split("\n")
+          .map((rawLine) => {
+            const trimmed = rawLine.replace(/\u00a0/g, " ").trim();
+            const isBullet = /^\s*(?:[-*+]|[•●▪◦‣⁃])\s+/.test(trimmed);
+            const textValue = cleanImportedLine(trimmed);
+            const isPageNumber = /^(?:page\s*)?\d+(?:\s*(?:of|\/|／)\s*\d+)?$/i.test(textValue)
+              || /^第\s*\d+\s*页(?:\s*共\s*\d+\s*页)?$/.test(textValue);
+            const isSeparator = /^[-_=·•]{3,}$/.test(textValue);
+            return {
+              text: isPageNumber || isSeparator ? "" : textValue,
+              isBullet,
+              blank: !textValue || isPageNumber || isSeparator
+            };
+          });
+      }
+
+      function partitionImportedCv(text) {
+        const lines = parseImportedCvLines(text);
+        const sections = { profile: [], experience: [], education: [], projects: [], skills: [], extras: [] };
+        const labels = {};
+        const preamble = [];
+        let currentSection = "";
+        let recognizedHeadings = 0;
+
+        lines.forEach((line) => {
+          if (!line.blank && !line.isBullet) {
+            const identified = identifyCvSectionHeading(line.text);
+            if (identified) {
+              currentSection = identified;
+              labels[identified] ||= line.text;
+              recognizedHeadings += 1;
+              return;
+            }
+            if (cvExtraSectionPattern.test(line.text.replace(/[：:]$/, "").trim())) {
+              currentSection = "extras";
+              sections.extras.push(line);
+              recognizedHeadings += 1;
+              return;
+            }
+          }
+
+          if (!currentSection) preamble.push(line);
+          else sections[currentSection].push(line);
+        });
+
+        if (!recognizedHeadings) {
+          const useful = preamble.filter((line) => !line.blank);
+          const probableHeaderCount = Math.min(3, useful.length);
+          preamble.length = 0;
+          preamble.push(...useful.slice(0, probableHeaderCount));
+          sections.profile.push(...useful.slice(probableHeaderCount));
+        }
+
+        return { preamble, sections, labels, recognizedHeadings };
+      }
+
+      function looksLikeContactLine(value) {
+        return /(?:@|\b(?:linkedin|github|portfolio|website|wechat|whatsapp|电话|手机|邮箱|邮件|地址)\b|https?:\/\/|www\.|\+?\d[\d\s().-]{6,})/i.test(value);
+      }
+
+      function containsResumeDate(value) {
+        return /(?:19|20)\d{2}|\b(?:present|current|now)\b|至今|现在|\d{1,2}[\/.年-]\d{2,4}/i.test(value);
+      }
+
+      function isLikelyEntryStart(value, nextValue = "") {
+        const textValue = cleanImportedLine(value);
+        if (!textValue || textValue.length > 100 || /[。.!?！？]$/.test(textValue)) return false;
+        return containsResumeDate(textValue) || containsResumeDate(nextValue);
+      }
+
+      function parseImportedEntries(lineObjects) {
+        const lines = lineObjects.filter((line) => !line.blank && line.text);
+        const entries = [];
+        let current = { headers: [], bullets: [] };
+
+        const pushCurrent = () => {
+          if (current.headers.length || current.bullets.length) entries.push(current);
+          current = { headers: [], bullets: [] };
+        };
+
+        lines.forEach((line, index) => {
+          const nextText = lines[index + 1]?.text || "";
+          if (line.isBullet) {
+            current.bullets.push(line.text);
+            return;
+          }
+          if (current.bullets.length && isLikelyEntryStart(line.text, nextText)) {
+            pushCurrent();
+            current.headers.push(line.text);
+            return;
+          }
+          if (current.headers.length < 2 && !current.bullets.length) {
+            current.headers.push(line.text);
+            return;
+          }
+          current.bullets.push(line.text);
+        });
+        pushCurrent();
+        return entries;
+      }
+
+      function entryAsMergedLine(entry) {
+        return [...entry.headers, ...entry.bullets].filter(Boolean).join(" — ");
+      }
+
+      function setSnapshotValue(snapshot, editId, value) {
+        if (editId) snapshot[editId] = String(value ?? "");
+      }
+
+      function fillEntrySlots(snapshot, slotItems, entries) {
+        if (!slotItems.length || !entries.length) return;
+        const usableEntries = entries.slice(0, slotItems.length);
+        if (entries.length > slotItems.length) {
+          const lastIndex = slotItems.length - 1;
+          usableEntries[lastIndex] = {
+            headers: [...usableEntries[lastIndex].headers],
+            bullets: [
+              ...usableEntries[lastIndex].bullets,
+              ...entries.slice(slotItems.length).map(entryAsMergedLine)
+            ]
+          };
+        }
+
+        slotItems.forEach((slot, index) => {
+          const entry = usableEntries[index];
+          if (!entry) return;
+          setSnapshotValue(snapshot, slot.heading, importedLinesToHtml(entry.headers.slice(0, 1)));
+          setSnapshotValue(snapshot, slot.meta, importedLinesToHtml(entry.headers.slice(1)));
+          if (!slot.bullets.length) return;
+          const bulletValues = [...entry.bullets];
+          if (bulletValues.length > slot.bullets.length) {
+            const mergeIndex = slot.bullets.length - 1;
+            bulletValues[mergeIndex] = bulletValues.slice(mergeIndex).join(" — ");
+            bulletValues.length = slot.bullets.length;
+          }
+          slot.bullets.forEach((bulletId, bulletIndex) => {
+            setSnapshotValue(snapshot, bulletId, lineWithOptionalLabel(bulletValues[bulletIndex] || ""));
+          });
+        });
+      }
+
+      function buildSnapshotFromCvText(text) {
+        const slots = getSemanticResumeSlots();
+        const parsed = partitionImportedCv(text);
+        const snapshot = Object.fromEntries(editables.map((node) => [node.dataset.editId, ""]));
+        const preambleLines = parsed.preamble.filter((line) => !line.blank && line.text).map((line) => line.text);
+        const filteredPreamble = preambleLines.filter((line) => !/^(?:curriculum\s+vitae|resume|résumé|个人简历|简历)$/i.test(line));
+        const nameIndex = filteredPreamble.findIndex((line) => !looksLikeContactLine(line));
+        const name = nameIndex >= 0 ? filteredPreamble[nameIndex] : "";
+        const remainingHeader = filteredPreamble.filter((_, index) => index !== nameIndex);
+        const contactLines = remainingHeader.filter(looksLikeContactLine);
+        const headlineLines = remainingHeader.filter((line) => !looksLikeContactLine(line));
+
+        setSnapshotValue(snapshot, slots.name, escapeResumeText(name));
+        setSnapshotValue(snapshot, slots.headline, importedLinesToHtml(headlineLines, false));
+        setSnapshotValue(snapshot, slots.contact, importedLinesToHtml(contactLines, false));
+
+        const profileLines = parsed.sections.profile.filter((line) => !line.blank && line.text).map((line) => line.text);
+        setSnapshotValue(snapshot, slots.profile.title, profileLines.length ? escapeResumeText(parsed.labels.profile || "PROFESSIONAL PROFILE") : "");
+        setSnapshotValue(snapshot, slots.profile.body, importedLinesToHtml(profileLines, false));
+
+        const experienceEntries = parseImportedEntries(parsed.sections.experience);
+        setSnapshotValue(snapshot, slots.experience.title, experienceEntries.length ? escapeResumeText(parsed.labels.experience || "PROFESSIONAL EXPERIENCE") : "");
+        fillEntrySlots(snapshot, slots.experience.items, experienceEntries);
+
+        const educationLines = parsed.sections.education.filter((line) => !line.blank && line.text).map((line) => line.text);
+        setSnapshotValue(snapshot, slots.education.title, educationLines.length ? escapeResumeText(parsed.labels.education || "EDUCATION") : "");
+        const educationSlot = slots.education.items[0];
+        if (educationSlot && educationLines.length) {
+          setSnapshotValue(snapshot, educationSlot.heading, importedLinesToHtml(educationLines.slice(0, 1)));
+          const remainingEducationLines = educationLines.slice(1);
+          const courseworkPattern = /^(?:(?:relevant|selected)\s+)?(?:coursework|courses?|modules?)\s*[:：]|^(?:相关|主要|主修|核心)?课程\s*[:：]/i;
+          const hasCoursework = educationSlot.extra.length
+            && courseworkPattern.test(remainingEducationLines.at(-1) || "");
+          const coursework = hasCoursework ? remainingEducationLines.pop() : "";
+          const metaLines = remainingEducationLines;
+          setSnapshotValue(snapshot, educationSlot.meta, importedLinesToHtml(metaLines));
+          if (educationSlot.extra.length) {
+            setSnapshotValue(snapshot, educationSlot.extra[0], lineWithOptionalLabel(coursework));
+          }
+        }
+
+        const projectEntries = parseImportedEntries(parsed.sections.projects);
+        setSnapshotValue(snapshot, slots.projects.title, projectEntries.length ? escapeResumeText(parsed.labels.projects || "PROJECTS / RESEARCH") : "");
+        fillEntrySlots(snapshot, slots.projects.items, projectEntries);
+
+        const extraLines = parsed.sections.extras.filter((line) => !line.blank && line.text).map((line) => line.text);
+        const skillLines = [
+          ...parsed.sections.skills.filter((line) => !line.blank && line.text).map((line) => line.text),
+          ...extraLines
+        ];
+        setSnapshotValue(snapshot, slots.skills.title, skillLines.length ? escapeResumeText(parsed.labels.skills || "SKILLS & AWARDS") : "");
+        if (skillLines.length && slots.skills.lines.length) {
+          const visibleSkills = skillLines.slice(0, slots.skills.lines.length);
+          if (skillLines.length > slots.skills.lines.length) {
+            const lastIndex = slots.skills.lines.length - 1;
+            visibleSkills[lastIndex] = skillLines.slice(lastIndex).join(" — ");
+          }
+          slots.skills.lines.forEach((lineId, index) => {
+            setSnapshotValue(snapshot, lineId, lineWithOptionalLabel(visibleSkills[index] || ""));
+          });
+        }
+
+        const recognizedSections = [
+          profileLines.length && "简介",
+          experienceEntries.length && "经历",
+          educationLines.length && "教育",
+          projectEntries.length && "项目/研究",
+          skillLines.length && "技能/奖项"
+        ].filter(Boolean);
+        const nonEmptyFields = Object.values(snapshot).filter((value) => cleanImportedLine(value.replace(/<br>/g, " "))).length;
+        const warnings = [];
+        if (!parsed.recognizedHeadings) warnings.push("未识别到标准栏目标题，正文已暂放入个人简介");
+        if (!name) warnings.push("未可靠识别姓名");
+        if (!contactLines.length) warnings.push("未可靠识别联系方式");
+        if (experienceEntries.length > slots.experience.items.length || projectEntries.length > slots.projects.items.length || skillLines.length > slots.skills.lines.length) {
+          warnings.push("部分较长内容已合并到最后一个可用条目");
+        }
+
+        return {
+          snapshot,
+          recognizedSections,
+          nonEmptyFields,
+          warnings,
+          sourceLineCount: parseImportedCvLines(text).filter((line) => !line.blank).length
+        };
+      }
+
+      function syncEmptyResumeSections() {
+        document.querySelectorAll(".detail-list li[data-edit-id], .skill-list li[data-edit-id], .coursework[data-edit-id]").forEach((node) => {
+          node.classList.toggle("editable-line--empty", !node.textContent.trim());
+        });
+        document.querySelectorAll(".resume-item").forEach((item) => {
+          const hasContent = [...item.querySelectorAll("[data-edit-id]")]
+            .some((node) => Boolean(node.textContent.trim()));
+          item.classList.toggle("resume-item--empty", !hasContent);
+        });
+        document.querySelectorAll(".resume-section").forEach((section) => {
+          const hasContent = [...section.querySelectorAll("[data-edit-id]")]
+            .some((node) => Boolean(node.textContent.trim()));
+          section.classList.toggle("resume-section--empty", !hasContent);
+          if (!hasContent) {
+            const title = section.querySelector(".section-title[data-edit-id]");
+            const defaultTitle = initialContent.get(title?.dataset.editId) || "栏目";
+            section.dataset.emptyLabel = defaultTitle.replace(/<[^>]+>/g, "").trim() || "栏目";
+          }
+        });
+      }
+
+      function refreshCvImportSummary() {
+        const analysis = buildSnapshotFromCvText(cvImportText.value);
+        const sectionText = analysis.recognizedSections.length ? analysis.recognizedSections.join("、") : "未识别";
+        const warningText = analysis.warnings.length ? `；请注意：${analysis.warnings.join("；")}` : "";
+        cvImportSummary.textContent = `识别栏目：${sectionText}；正文 ${analysis.sourceLineCount} 行，预计填充 ${analysis.nonEmptyFields} 个字段${warningText}。`;
+        return analysis;
+      }
+
+      function loadScriptFromUrl(url, integrity = "") {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = url;
+          script.async = true;
+          script.crossOrigin = "anonymous";
+          if (integrity) script.integrity = integrity;
+          script.onload = () => resolve();
+          script.onerror = () => {
+            script.remove();
+            reject(new Error("library-load-failed"));
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      async function loadExternalLibrary(globalName, urls) {
+        if (window[globalName]) return window[globalName];
+        if (!externalLibraryLoads.has(globalName)) {
+          externalLibraryLoads.set(globalName, (async () => {
+            for (const candidate of urls) {
+              const url = typeof candidate === "string" ? candidate : candidate.url;
+              const integrity = typeof candidate === "string" ? "" : candidate.integrity;
+              try {
+                await loadScriptFromUrl(url, integrity);
+                if (window[globalName]) {
+                  externalLibrarySources.set(globalName, url);
+                  return window[globalName];
+                }
+              } catch (error) {
+                // Try the next pinned CDN URL.
+              }
+            }
+            throw new Error("library-unavailable");
+          })());
+        }
+        try {
+          return await externalLibraryLoads.get(globalName);
+        } catch (error) {
+          externalLibraryLoads.delete(globalName);
+          throw error;
+        }
+      }
+
+      function digestBytesToBase64(bytes) {
+        let binary = "";
+        new Uint8Array(bytes).forEach((byte) => { binary += String.fromCharCode(byte); });
+        return window.btoa(binary);
+      }
+
+      async function fetchVerifiedAsset(candidate) {
+        if (!window.crypto?.subtle || !candidate?.integrity?.startsWith("sha384-")) {
+          throw new Error("integrity-unavailable");
+        }
+        const response = await fetch(candidate.url, {
+          mode: "cors",
+          credentials: "omit",
+          cache: "force-cache",
+          referrerPolicy: "no-referrer"
+        });
+        if (!response.ok) throw new Error("library-load-failed");
+        const bytes = await response.arrayBuffer();
+        const digest = await window.crypto.subtle.digest("SHA-384", bytes);
+        const actualIntegrity = `sha384-${digestBytesToBase64(digest)}`;
+        if (actualIntegrity !== candidate.integrity) throw new Error("integrity-mismatch");
+        return { bytes, sourceUrl: candidate.url };
+      }
+
+      async function loadExternalModule(cacheKey, urls) {
+        if (!externalLibraryLoads.has(cacheKey)) {
+          externalLibraryLoads.set(cacheKey, (async () => {
+            for (const candidate of urls) {
+              let objectUrl = "";
+              try {
+                const asset = await fetchVerifiedAsset(candidate);
+                objectUrl = URL.createObjectURL(new Blob([asset.bytes], { type: "text/javascript" }));
+                const module = await import(objectUrl);
+                externalLibrarySources.set(cacheKey, asset.sourceUrl);
+                externalLibraryObjectUrls.set(cacheKey, objectUrl);
+                return module;
+              } catch (error) {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                // Try the next pinned CDN URL.
+              }
+            }
+            throw new Error("library-unavailable");
+          })());
+        }
+        try {
+          return await externalLibraryLoads.get(cacheKey);
+        } catch (error) {
+          externalLibraryLoads.delete(cacheKey);
+          throw error;
+        }
+      }
+
+      async function loadVerifiedBlobUrl(cacheKey, urls) {
+        if (!externalLibraryLoads.has(cacheKey)) {
+          externalLibraryLoads.set(cacheKey, (async () => {
+            for (const candidate of urls) {
+              try {
+                const asset = await fetchVerifiedAsset(candidate);
+                const objectUrl = URL.createObjectURL(new Blob([asset.bytes], { type: "text/javascript" }));
+                externalLibrarySources.set(cacheKey, asset.sourceUrl);
+                externalLibraryObjectUrls.set(cacheKey, objectUrl);
+                return objectUrl;
+              } catch (error) {
+                // Try the next pinned CDN URL.
+              }
+            }
+            throw new Error("library-unavailable");
+          })());
+        }
+        try {
+          return await externalLibraryLoads.get(cacheKey);
+        } catch (error) {
+          externalLibraryLoads.delete(cacheKey);
+          throw error;
+        }
+      }
+
+      function pdfItemsToLines(items) {
+        const isCjkCharacter = (value) => /[\u2e80-\u2fff\u3040-\u30ff\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/.test(value);
+        const tokens = items
+          .filter((item) => typeof item.str === "string" && item.str.trim())
+          .map((item) => {
+            const textValue = item.str.trim();
+            const height = Math.abs(Number(item.height) || Number(item.transform?.[3]) || 10);
+            const characterCount = Math.max(1, Array.from(textValue).length);
+            const allCjk = Array.from(textValue).every((character) => isCjkCharacter(character) || /[，。！？；：、（）《》【】]/.test(character));
+            return {
+              text: textValue,
+              x: Number(item.transform?.[4]) || 0,
+              y: Number(item.transform?.[5]) || 0,
+              width: Math.abs(Number(item.width)) || height * characterCount * (allCjk ? 1 : 0.52),
+              height
+            };
+          })
+          .sort((a, b) => Math.abs(b.y - a.y) > 2.5 ? b.y - a.y : a.x - b.x);
+        const rows = [];
+        tokens.forEach((token) => {
+          let row = rows.find((candidate) => Math.abs(candidate.y - token.y) <= 2.5);
+          if (!row) {
+            row = { y: token.y, tokens: [] };
+            rows.push(row);
+          }
+          row.tokens.push(token);
+        });
+        return rows
+          .sort((a, b) => b.y - a.y)
+          .map((row) => {
+            const ordered = row.tokens.sort((a, b) => a.x - b.x);
+            if (!ordered.length) return "";
+            let line = ordered[0].text;
+            for (let index = 1; index < ordered.length; index += 1) {
+              const previous = ordered[index - 1];
+              const current = ordered[index];
+              const gap = current.x - (previous.x + previous.width);
+              const fontSize = Math.max(previous.height, current.height, 1);
+              const leftCharacter = Array.from(previous.text).at(-1) || "";
+              const rightCharacter = Array.from(current.text)[0] || "";
+              const cjkBoundary = isCjkCharacter(leftCharacter) && isCjkCharacter(rightCharacter);
+              const punctuationBoundary = /[（《【“‘]/.test(leftCharacter) || /[，。！？；：、）》】”’.,!?;:]/.test(rightCharacter);
+              const closeEnough = gap <= fontSize * (cjkBoundary ? 0.62 : 0.09);
+              if (!punctuationBoundary && !closeEnough) line += " ";
+              line += current.text;
+            }
+            return line.replace(/\s+/g, " ").trim();
+          })
+          .filter(Boolean);
+      }
+
+      async function extractTextFromPdf(file) {
+        const pdfjsLib = await loadExternalModule("pdfjsModule", [
+          {
+            url: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/legacy/build/pdf.mjs",
+            integrity: "sha384-OQt+efCOZxfeU2OgAua9T0l4CcJ8pIHyyZVWqgxYoZtVB3JlW6ISImRvZX64aA8G"
+          },
+          {
+            url: "https://unpkg.com/pdfjs-dist@5.7.284/legacy/build/pdf.mjs",
+            integrity: "sha384-OQt+efCOZxfeU2OgAua9T0l4CcJ8pIHyyZVWqgxYoZtVB3JlW6ISImRvZX64aA8G"
+          }
+        ]);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = await loadVerifiedBlobUrl("pdfjsWorker", [
+          {
+            url: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/legacy/build/pdf.worker.mjs",
+            integrity: "sha384-GMc+SUTqnzhviTLSPW4wTrbWKRrUBU1kpj3ekS4hFOOlLCteM3iukPmmBJQ/fmJZ"
+          },
+          {
+            url: "https://unpkg.com/pdfjs-dist@5.7.284/legacy/build/pdf.worker.mjs",
+            integrity: "sha384-GMc+SUTqnzhviTLSPW4wTrbWKRrUBU1kpj3ekS4hFOOlLCteM3iukPmmBJQ/fmJZ"
+          }
+        ]);
+        const loadingTask = pdfjsLib.getDocument({
+          data: new Uint8Array(await file.arrayBuffer()),
+          isEvalSupported: false
+        });
+        let pdf;
+        try {
+          pdf = await loadingTask.promise;
+          if (pdf.numPages > maxPdfPages) throw new Error("too-many-pages");
+          const pages = [];
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+            const page = await pdf.getPage(pageNumber);
+            const content = await page.getTextContent({ normalizeWhitespace: true });
+            pages.push(pdfItemsToLines(content.items).join("\n"));
+            if (pages.join("\n").length > maxCvTextCharacters) break;
+          }
+          const textValue = pages.join("\n\n").slice(0, maxCvTextCharacters);
+          if (textValue.replace(/\s/g, "").length < 40) throw new Error("pdf-no-text");
+          return textValue;
+        } catch (error) {
+          if (/password/i.test(error?.name || "") || /password/i.test(error?.message || "")) throw new Error("pdf-password");
+          throw error;
+        } finally {
+          try { await pdf?.destroy(); } catch (error) {}
+        }
+      }
+
+      async function extractTextFromDocx(file) {
+        const mammoth = await loadExternalLibrary("mammoth", [
+          {
+            url: "https://cdn.jsdelivr.net/npm/mammoth@1.10.0/mammoth.browser.min.js",
+            integrity: "sha384-uvBxVufq+yj4tHg73GHHpkfd2ShoR6nNqE4Ckhwt3jYVm79X4TMRo1VhN5EejJGy"
+          },
+          {
+            url: "https://unpkg.com/mammoth@1.10.0/mammoth.browser.min.js",
+            integrity: "sha384-uvBxVufq+yj4tHg73GHHpkfd2ShoR6nNqE4Ckhwt3jYVm79X4TMRo1VhN5EejJGy"
+          }
+        ]);
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        const textValue = String(result?.value || "").slice(0, maxCvTextCharacters);
+        if (textValue.replace(/\s/g, "").length < 40) throw new Error("docx-no-text");
+        return textValue;
+      }
+
+      async function extractTextFromCvFile(file) {
+        if (file.size > maxCvFileBytes) throw new Error("file-too-large");
+        const extension = file.name.split(".").pop()?.toLowerCase() || "";
+        if (["txt", "md", "markdown"].includes(extension)) {
+          return (await readTextFile(file)).slice(0, maxCvTextCharacters);
+        }
+        if (extension === "pdf" || file.type === "application/pdf") return extractTextFromPdf(file);
+        if (extension === "docx" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+          return extractTextFromDocx(file);
+        }
+        throw new Error("unsupported-cv-file");
+      }
+
+      function getCvImportErrorMessage(error) {
+        const messages = {
+          "file-too-large": "文件超过 15 MB，请先压缩或转换为 TXT / Markdown。",
+          "too-many-pages": "PDF 超过 30 页，请先保留简历相关页面再导入。",
+          "pdf-no-text": "这个 PDF 没有可提取文字，可能是扫描件；请先 OCR，或另存为 DOCX / TXT。",
+          "pdf-password": "这个 PDF 受密码保护，请解锁后再导入。",
+          "docx-no-text": "这个 DOCX 没有提取到足够文字，请另存为 TXT 或 PDF 后重试。",
+          "unsupported-cv-file": "暂时支持 PDF、DOCX、TXT 和 Markdown；旧版 .doc 请先另存为 .docx。",
+          "library-unavailable": "读取 PDF / DOCX 所需的解析组件未能加载，请联网后重试，或改用 TXT / Markdown。",
+          "read-failed": "文件读取失败，请重新选择文件。"
+        };
+        return messages[error?.message] || "无法解析这个 CV。请检查文件格式，或改用 TXT / Markdown。";
+      }
+
+      async function handleCvSelection(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        importCvButton.disabled = true;
+        importCvButton.textContent = "正在读取…";
+        setSaveMessage("正在本地解析 CV…");
+        try {
+          const extractedText = await extractTextFromCvFile(file);
+          if (extractedText.replace(/\s/g, "").length < 40) throw new Error("read-failed");
+          pendingCvFileName = file.name;
+          cvImportFileName.textContent = `文件：${file.name}`;
+          cvImportText.value = extractedText;
+          refreshCvImportSummary();
+          cvImportDialog.showModal();
+          setSaveMessage("CV 已读取，请检查导入预览", true);
+        } catch (error) {
+          setSaveMessage("CV 读取失败", true);
+          showToast(getCvImportErrorMessage(error));
+        } finally {
+          importCvButton.disabled = false;
+          importCvButton.textContent = "导入已有 CV";
+          cvInput.value = "";
+        }
+      }
+
+      function applyCvImport() {
+        const textValue = cvImportText.value.trim();
+        if (textValue.length < 40) {
+          showToast("提取正文太短，请补充或修正后再导入。");
+          cvImportText.focus();
+          return;
+        }
+        const analysis = refreshCvImportSummary();
+        saveCvImportBackup();
+        const appliedCount = applyContentSnapshot(analysis.snapshot);
+        if (!appliedCount) {
+          showToast("没有找到可填充的简历字段。");
+          return;
+        }
+        syncEmptyResumeSections();
+        saveContentNow();
+        queuePageCheck();
+        cvImportDialog.close();
+        const warningSuffix = analysis.warnings.length ? " 请根据提示复核内容。" : "";
+        showToast(`已从 ${pendingCvFileName || "CV"} 导入 ${analysis.nonEmptyFields} 个字段。${warningSuffix}`);
+      }
+
 
       async function importDraft(event) {
         const file = event.target.files?.[0];
@@ -1287,6 +2242,8 @@
           if (!confirmed) return;
           const appliedCount = applyContentSnapshot(snapshot);
           if (!appliedCount) throw new Error("invalid-draft");
+          clearCvImportBackup();
+          syncEmptyResumeSections();
           if (parsed?.settings?.printMode) {
             const mode = applyPrintMode(parsed.settings.printMode);
             try { localStorage.setItem(printModeStorageKey, mode); } catch (error) {}
@@ -1545,9 +2502,13 @@
 
       editables.forEach((node) => {
         node.addEventListener("input", () => {
+          node.classList.remove("editable-line--empty");
+          node.closest(".resume-item")?.classList.remove("resume-item--empty");
+          node.closest(".resume-section")?.classList.remove("resume-section--empty");
           queueContentSave();
           queuePageCheck();
         });
+        node.addEventListener("blur", syncEmptyResumeSections);
         node.addEventListener("paste", insertPlainText);
         if (node.hasAttribute("data-single-line")) {
           node.addEventListener("keydown", (event) => {
@@ -1559,9 +2520,34 @@
         }
       });
 
+      document.querySelectorAll(".resume-section").forEach((section) => {
+        section.addEventListener("click", () => {
+          if (!section.classList.contains("resume-section--empty")) return;
+          const title = section.querySelector(".section-title[data-edit-id]");
+          if (!title) return;
+          title.innerHTML = initialContent.get(title.dataset.editId) || escapeResumeText(section.dataset.emptyLabel || "SECTION");
+          section.classList.remove("resume-section--empty");
+          title.focus();
+          queueContentSave();
+          queuePageCheck();
+        });
+      });
+
+      importCvButton.addEventListener("click", () => cvInput.click());
+      undoCvImportButton.addEventListener("click", undoCvImport);
       importDraftButton.addEventListener("click", () => draftInput.click());
       exportDraftButton.addEventListener("click", exportDraft);
+      cvInput.addEventListener("change", handleCvSelection);
       draftInput.addEventListener("change", importDraft);
+      cvImportApplyButton.addEventListener("click", applyCvImport);
+      cvImportCancelButton.addEventListener("click", () => cvImportDialog.close());
+      cvImportText.addEventListener("input", () => {
+        window.clearTimeout(cvPreviewTimer);
+        cvPreviewTimer = window.setTimeout(refreshCvImportSummary, 220);
+      });
+      cvImportDialog.addEventListener("click", (event) => {
+        if (event.target === cvImportDialog) cvImportDialog.close();
+      });
 
       resetButton.addEventListener("click", () => {
         const confirmed = window.confirm("确定恢复默认模板吗？当前浏览器中的正文编辑记录会被清除。");
@@ -1569,7 +2555,9 @@
         editables.forEach((node) => {
           node.innerHTML = initialContent.get(node.dataset.editId) || "";
         });
+        syncEmptyResumeSections();
         localStorage.removeItem(contentStorageKey);
+        clearCvImportBackup();
         setSaveMessage("已恢复模板", true);
         queuePageCheck();
         showToast("正文已恢复为默认模板。");
@@ -1709,6 +2697,7 @@
       restorePrintMode();
       restoreFontScale();
       syncPhotoUI();
+      updateUndoCvImportAvailability();
 
       if (document.fonts?.ready) {
         document.fonts.ready.then(() => {
