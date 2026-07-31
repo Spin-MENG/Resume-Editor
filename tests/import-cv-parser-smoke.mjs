@@ -6,6 +6,9 @@ const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 assert.match(html, /globalThis\.pdfjsWorker\s*=\s*\{\s*WorkerMessageHandler:\s*workerHandler\s*\}/, "PDF import must use the main-thread worker fallback");
 assert.match(html, /const cvImportTimeoutMs\s*=\s*70000/, "CV import must have a global timeout");
 assert.match(html, /"pdf-open-timeout"/, "PDF open timeout must have a user-facing error");
+for (const optionalFieldId of ["exp-current-5", "exp-previous-2", "exp-previous-3", "project-one-2", "project-two-2"]) {
+  assert.match(html, new RegExp(`data-edit-id="${optionalFieldId}"><\\/li>`), `Missing empty optional field ${optionalFieldId}`);
+}
 const start = html.indexOf("      function escapeResumeText");
 const end = html.indexOf("      function syncEmptyResumeSections");
 
@@ -19,11 +22,11 @@ const pdfLineImplementation = html.slice(pdfLineStart, pdfLineEnd);
 const ids = [
   "name", "headline", "contact", "section-profile", "profile-copy",
   "section-experience", "exp-current-company", "exp-current-meta",
-  "exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4",
-  "exp-previous-company", "exp-previous-meta", "exp-previous-1",
+  "exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4", "exp-current-5",
+  "exp-previous-company", "exp-previous-meta", "exp-previous-1", "exp-previous-2", "exp-previous-3",
   "section-education", "education-school", "education-degrees", "education-coursework",
-  "section-research", "project-one-heading", "project-one-meta", "project-one-1",
-  "project-two-heading", "project-two-meta", "project-two-1",
+  "section-research", "project-one-heading", "project-one-meta", "project-one-1", "project-one-2",
+  "project-two-heading", "project-two-meta", "project-two-1", "project-two-2",
   "section-skills", "skill-1", "skill-2", "skill-3", "skill-4", "skill-5"
 ];
 const editables = ids.map((editId) => ({ dataset: { editId } }));
@@ -35,8 +38,8 @@ const slots = {
   experience: {
     title: "section-experience",
     items: [
-      { heading: "exp-current-company", meta: "exp-current-meta", bullets: ["exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4"], extra: [] },
-      { heading: "exp-previous-company", meta: "exp-previous-meta", bullets: ["exp-previous-1"], extra: [] }
+      { heading: "exp-current-company", meta: "exp-current-meta", bullets: ["exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4", "exp-current-5"], extra: [] },
+      { heading: "exp-previous-company", meta: "exp-previous-meta", bullets: ["exp-previous-1", "exp-previous-2", "exp-previous-3"], extra: [] }
     ]
   },
   education: {
@@ -46,8 +49,8 @@ const slots = {
   projects: {
     title: "section-research",
     items: [
-      { heading: "project-one-heading", meta: "project-one-meta", bullets: ["project-one-1"], extra: [] },
-      { heading: "project-two-heading", meta: "project-two-meta", bullets: ["project-two-1"], extra: [] }
+      { heading: "project-one-heading", meta: "project-one-meta", bullets: ["project-one-1", "project-one-2"], extra: [] },
+      { heading: "project-two-heading", meta: "project-two-meta", bullets: ["project-two-1", "project-two-2"], extra: [] }
     ]
   },
   skills: { title: "section-skills", lines: ["skill-1", "skill-2", "skill-3", "skill-4", "skill-5"] }
@@ -78,10 +81,15 @@ Acme Software
 Senior Product Manager | 2022 - Present
 - Led roadmap planning across three product squads.
 - Improved activation by 18% through onboarding experiments.
+- Defined quarterly adoption metrics with sales and customer success.
+- Built executive roadmap updates from product and usage signals.
+- Coordinated release-readiness reviews with engineering and support.
 
 Earlier Company
 Product Manager | 2019 - 2022
 - Shipped analytics workflows for enterprise customers.
+- Automated weekly usage reporting for customer success teams.
+- Presented adoption insights to sales and product leaders.
 
 ## EDUCATION
 Example University
@@ -92,6 +100,12 @@ Relevant Coursework: Analytics, Product Design
 Customer Insights Platform
 Project Lead | 2023
 - Built a feedback taxonomy used by sales and product teams.
+- Connected interview themes to quarterly roadmap decisions.
+
+Experimentation Toolkit
+Product Owner | 2022
+- Standardized experiment planning across two product squads.
+- Reduced analysis handoff time through reusable templates.
 
 ## SKILLS & AWARDS
 - Technical Skills: SQL, Figma, Jira, data_analysis
@@ -104,8 +118,14 @@ assert.equal(result.snapshot.name, "JANE DOE");
 assert.match(result.snapshot.contact, /jane@example\.com/);
 assert.equal(result.snapshot["exp-current-company"], "Acme Software");
 assert.match(result.snapshot["exp-current-1"], /roadmap planning/);
+assert.match(result.snapshot["exp-current-5"], /release-readiness reviews/);
+assert.match(result.snapshot["exp-previous-2"], /weekly usage reporting/);
+assert.match(result.snapshot["exp-previous-3"], /adoption insights/);
 assert.equal(result.snapshot["education-school"], "Example University");
 assert.equal(result.snapshot["project-one-heading"], "Customer Insights Platform");
+assert.match(result.snapshot["project-one-2"], /quarterly roadmap decisions/);
+assert.equal(result.snapshot["project-two-heading"], "Experimentation Toolkit");
+assert.match(result.snapshot["project-two-2"], /analysis handoff time/);
 assert.match(result.snapshot["skill-1"], /<strong>Technical Skills:<\/strong>/);
 assert.match(result.snapshot["skill-1"], /data_analysis/);
 assert.ok(result.recognizedSections.length >= 5);

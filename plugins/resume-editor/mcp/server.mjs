@@ -18,9 +18,12 @@ const fields = [
   ["exp-current-2", "Current role bullet 2", "experience", "bullet"],
   ["exp-current-3", "Current role bullet 3", "experience", "bullet"],
   ["exp-current-4", "Current role bullet 4", "experience", "bullet"],
+  ["exp-current-5", "Current role bullet 5", "experience", "bullet"],
   ["exp-previous-company", "Previous company", "experience", "single-line"],
   ["exp-previous-meta", "Previous role and dates", "experience", "single-line"],
-  ["exp-previous-1", "Previous role bullet", "experience", "bullet"],
+  ["exp-previous-1", "Previous role bullet 1", "experience", "bullet"],
+  ["exp-previous-2", "Previous role bullet 2", "experience", "bullet"],
+  ["exp-previous-3", "Previous role bullet 3", "experience", "bullet"],
   ["section-education", "Education section title", "education", "single-line"],
   ["education-school", "School", "education", "single-line"],
   ["education-degrees", "Degrees", "education", "paragraph"],
@@ -28,10 +31,12 @@ const fields = [
   ["section-research", "Projects or research section title", "projects", "single-line"],
   ["project-one-heading", "Project 1 title", "projects", "single-line"],
   ["project-one-meta", "Project 1 meta", "projects", "single-line"],
-  ["project-one-1", "Project 1 bullet", "projects", "bullet"],
+  ["project-one-1", "Project 1 bullet 1", "projects", "bullet"],
+  ["project-one-2", "Project 1 bullet 2", "projects", "bullet"],
   ["project-two-heading", "Project 2 title", "projects", "single-line"],
   ["project-two-meta", "Project 2 meta", "projects", "single-line"],
-  ["project-two-1", "Project 2 bullet", "projects", "bullet"],
+  ["project-two-1", "Project 2 bullet 1", "projects", "bullet"],
+  ["project-two-2", "Project 2 bullet 2", "projects", "bullet"],
   ["section-skills", "Skills section title", "skills", "single-line"],
   ["skill-1", "Technical skills", "skills", "bullet"],
   ["skill-2", "Methods", "skills", "bullet"],
@@ -53,9 +58,12 @@ const defaultContent = {
   "exp-current-2": "<strong>Tools / Process:</strong> Name the systems, tools, analysis methods, or workflows you used.",
   "exp-current-3": "<strong>Collaboration:</strong> Explain how you worked with stakeholders, translated requirements, or communicated findings.",
   "exp-current-4": "<strong>Result:</strong> Add a concrete metric, scale, efficiency gain, quality improvement, revenue impact, cost reduction, or customer outcome.",
+  "exp-current-5": "",
   "exp-previous-company": "Previous Company / Project Team",
   "exp-previous-meta": "<strong>Previous Role Title</strong> | Month YYYY - Month YYYY",
   "exp-previous-1": "Summarize the most relevant achievement from this role.",
+  "exp-previous-2": "",
+  "exp-previous-3": "",
   "section-education": "EDUCATION",
   "education-school": "University / Institution Name",
   "education-degrees": "<strong>Degree / Major</strong> | GPA / Honors if useful | Month YYYY - Month YYYY<br><strong>Additional Degree / Certificate</strong> | Month YYYY - Month YYYY",
@@ -64,9 +72,11 @@ const defaultContent = {
   "project-one-heading": "Relevant Project Name",
   "project-one-meta": "<strong>Your Role / Context</strong> | Month YYYY - Month YYYY",
   "project-one-1": "Describe the problem, your contribution, the methods or tools used, and the final result.",
+  "project-one-2": "",
   "project-two-heading": "Second Project / Publication / Case Study",
   "project-two-meta": "<strong>Your Role / Recognition</strong>",
   "project-two-1": "Use this space for one additional proof point.",
+  "project-two-2": "",
   "section-skills": "SKILLS & AWARDS",
   "skill-1": "<strong>Technical Skills:</strong> Tools, software, programming languages, platforms, or professional systems relevant to the target role",
   "skill-2": "<strong>Methods:</strong> Analytical methods, operating processes, research skills, design skills, or domain-specific capabilities",
@@ -139,9 +149,11 @@ const tools = [
         unknownFields: { type: "array", items: { type: "string" } },
         characterCount: { type: "number" },
         bulletCount: { type: "number" },
+        contentBulletCount: { type: "number" },
+        skillLineCount: { type: "number" },
         singlePageRisk: { type: "string" }
       },
-      required: ["missingFields", "unknownFields", "characterCount", "bulletCount", "singlePageRisk"]
+      required: ["missingFields", "unknownFields", "characterCount", "bulletCount", "contentBulletCount", "skillLineCount", "singlePageRisk"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
   },
@@ -277,12 +289,14 @@ function validateContent(input) {
   const unknownFields = sourceKeys.filter((key) => !fieldIds.has(key));
   const plainText = Object.values(content).map(textFromHtml).join(" ");
   const bulletCount = fields.filter((field) => field.kind === "bullet" && content[field.id]).length;
+  const contentBulletCount = fields.filter((field) => field.kind === "bullet" && field.section !== "skills" && content[field.id]).length;
+  const skillLineCount = fields.filter((field) => field.section === "skills" && content[field.id]).length;
   const characterCount = plainText.length;
   const singlePageRisk =
-    characterCount > 4300 || bulletCount > 12 ? "high" :
-    characterCount > 3400 || bulletCount > 10 ? "medium" :
+    characterCount > 4300 || contentBulletCount > 12 || bulletCount > 18 ? "high" :
+    characterCount > 3400 || contentBulletCount > 10 || bulletCount > 15 ? "medium" :
     "low";
-  return { missingFields, unknownFields, characterCount, bulletCount, singlePageRisk };
+  return { missingFields, unknownFields, characterCount, bulletCount, contentBulletCount, skillLineCount, singlePageRisk };
 }
 
 function buildDraft(content, settings = {}) {
@@ -423,8 +437,8 @@ async function handleRequest(message) {
         result: {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
-          serverInfo: { name: "resume-editor", version: "0.2.0" },
-          instructions: "Use these tools to validate Resume Editor drafts, extract candidate JD signals, flag claims that require verification, and package importable JSON. Do not invent resume facts or present a simulated ATS score."
+          serverInfo: { name: "resume-editor", version: "0.3.0" },
+          instructions: "Use these tools to develop complete, evidence-based Resume Editor content before one-page prioritization, extract candidate JD signals, flag claims that require verification, and package importable JSON. Do not invent resume facts or present a simulated ATS score."
         }
       };
     }

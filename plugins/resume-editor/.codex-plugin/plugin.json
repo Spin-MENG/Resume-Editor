@@ -1,7 +1,7 @@
 {
   "name": "resume-editor",
-  "version": "0.2.0",
-  "description": "Create evidence-based, JD-tailored, importable drafts for the Resume Editor HTML tool.",
+  "version": "0.3.0",
+  "description": "Develop rich, evidence-based, JD-tailored drafts for the Resume Editor HTML tool.",
   "author": {
     "name": "Meng Jingrui"
   },
@@ -16,15 +16,15 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Resume Editor",
-    "shortDescription": "Tailor evidence-based resumes to target jobs.",
-    "longDescription": "Resume Editor helps ChatGPT and Codex tailor resumes with evidence-integrity, JD-matching, writing, ATS/one-page, and role-specific guidance. It exposes schema validation, heuristic JD-signal extraction, claim review, and import-payload packaging so users can safely import the result back into the HTML editor.",
+    "shortDescription": "Develop rich, evidence-based targeted resumes.",
+    "longDescription": "Resume Editor helps ChatGPT and Codex develop detailed resume evidence before tailoring and one-page prioritization. It combines evidence-integrity, JD-matching, writing, ATS/one-page, and role-specific guidance with schema validation, heuristic JD-signal extraction, claim review, and import-payload packaging.",
     "developerName": "Meng Jingrui",
     "category": "Productivity",
     "capabilities": [
       "Read"
     ],
     "defaultPrompt": [
-      "Use $resume-editor to optimize my resume for this JD without inventing facts.",
+      "Use $resume-editor to develop and tailor a rich resume for this JD without inventing facts.",
       "Create a Resume Editor import JSON.",
       "Review my resume claims and one-page risk."
     ],

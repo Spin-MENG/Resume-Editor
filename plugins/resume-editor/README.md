@@ -4,13 +4,13 @@ This is a local Codex/ChatGPT plugin prototype for the editable HTML Resume Edit
 
 It provides:
 
-- A bundled skill with evidence-integrity, JD-matching, resume-writing, ATS/one-page, and role-specific guidance.
+- A bundled skill with evidence-integrity, content-development, JD-matching, resume-writing, ATS/one-page, and role-specific guidance.
 - A no-dependency claim checker that flags unsupported metrics, ownership, causal impact, superlatives, and unresolved placeholders for human review.
 - A stdio MCP server with tools for schema discovery, draft validation, heuristic JD-signal extraction, claim review, and import-payload packaging.
 - A stateless HTTP MCP server for development deployment at `/mcp`.
 - A marketplace entry at the repository root for local testing.
 
-The role guides are starting points, not universal keyword lists: the actual JD and the user's evidence remain authoritative. The skill forbids invented facts, unsupported upgrades, and fake ATS percentages.
+The workflow develops a content-complete evidence draft before one-page prioritization. For sparse material, it asks a small batch of specific clarification questions instead of producing vague bullets or inventing detail. Role guides are starting points, not universal keyword lists: the actual JD and the user's evidence remain authoritative. The skill forbids invented facts, unsupported upgrades, and fake ATS percentages.
 
 The plugin does not store user data, call external APIs, or require user secrets. Users paste or attach a Resume Editor draft and JD inside their active Codex/ChatGPT conversation.
 

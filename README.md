@@ -144,8 +144,8 @@ codex plugin add resume-editor@resume-tools
 4. 在网页中完成基础修改，然后点击 `导出草稿`。
 5. 把导出的 JSON 放进仓库根目录，并重命名为 `resume-original.resume.json`。`*.resume.json` 已被 `.gitignore` 排除；保留这份原稿，不要覆盖或强制提交到 Git。
 6. 在仓库根目录运行 `codex`，把目标 JD 和下面的 Prompt 发给 Codex。
-7. Codex 会分析 JD、核对证据，并把优化后的可导入草稿保存为 `resume-tailored.resume.json`。
-8. 先检查 Codex 输出的待确认事实。回答确认问题后，可让 Codex 重新生成 `resume-tailored.resume.json`。
+7. Codex 会先分析 JD、核对证据并展开内容。如果关键经历过于简略，它会一次提出不超过 6 个针对性问题；已有材料足够时不会重复追问。
+8. 回答问题后，让 Codex 先形成内容完整稿，再按一页 A4 做相关性取舍，并保存为 `resume-tailored.resume.json`。
 9. 回到网页，点击 `导入草稿`，选择 `resume-tailored.resume.json`。再次核对姓名、日期、数字、栏目和排版。
 10. 右上角选择 `单页 A4`，调整字号后点击 `导出 PDF`。打印窗口选择 A4、100% 缩放、关闭页眉页脚，并建议开启背景图形。
 
@@ -166,12 +166,15 @@ codex plugin add resume-editor@resume-tools
 请你完成：
 1. 把 JD 要求按 Required / Core / Preferred / Context 分类；每项保留可核对的 JD 原文依据，不要把启发式关键词当成结论。
 2. 建立 Direct / Transferable / Missing 证据矩阵，对照我的原始草稿说明哪些要求有直接证据、哪些仅可迁移、哪些确实缺失。
-3. 直接改写简历，让它更匹配 JD。每条经历优先使用“动作 + 对象/范围 + 方法/工具 + 结果”的结构，并保持原有事实、时间、职级和责任边界。
-4. 控制在一页 A4 内：先按与 JD 的相关性删减和合并，再压缩措辞；不要用极小字号掩盖内容过多。
-5. 不得编造或强化经历、指标、因果、所有权、公司、学校、证书和技能；不得输出没有依据的“ATS 匹配率”。需要我补充的信息统一写成 [待确认：具体问题]。
-6. 生成 JSON 前调用可用的 schema、validation、claim review 和 import payload 工具；claim review 只用于提示人工核对，不能代替事实判断。
-7. 不要覆盖 ./resume-original.resume.json。把最终完整、合法、可直接导入 index.html 的 JSON 保存为 ./resume-tailored.resume.json。
-8. 最后在对话中输出：
+3. 不要一开始就压缩。逐段提取并利用已有的业务背景/问题、目标、个人动作和责任边界、方法/工具、范围/频率、协作对象/交付物、真实结果或决策用途。
+4. 如果缺失信息会明显限制最重要的 JD 匹配，在最终生成 JSON 前一次提出不超过 6 个具体、可回答的问题并等待我的回答；原稿已有的信息不要重复问。如果我要求直接输出，则基于现有证据完成并单列缺口。
+5. 先写内容完整稿：简介保持 2–3 个紧凑但信息充足的行；最近或最相关经历优先写 3–5 条不同贡献，上一段经历写 2–3 条，每个相关项目写 1–2 条。数量必须服从真实证据，不要重复或凑数。
+6. 每条 bullet 优先使用“准确动作 + 对象 + 最有价值的已验证细节”，可加入方法、范围、频率、协作对象、交付物、结果或决策用途。没有指标时使用有来源的定性细节，不得虚构数字。
+7. 内容完整后再控制在一页 A4：按 JD 相关性、证据强度、时效性和独特性排序，先删重复和低相关内容，再压缩措辞；不要用极小字号掩盖内容过多。
+8. 不得编造或强化经历、指标、因果、所有权、公司、学校、证书和技能；不得输出没有依据的“ATS 匹配率”。需要我补充的信息统一写成 [待确认：具体问题]。
+9. 生成 JSON 前调用可用的 schema、validation、claim review 和 import payload 工具；claim review 只用于提示人工核对，不能代替事实判断。
+10. 不要覆盖 ./resume-original.resume.json。把最终完整、合法、可直接导入 index.html 的 JSON 保存为 ./resume-tailored.resume.json。
+11. 最后在对话中输出：
    A. 修改摘要及最重要的 JD 匹配变化。
    B. 已保存的 JSON 文件路径。
    C. 待确认事实、仍然缺失的 JD 证据和一页排版风险；没有则明确写“无”。
