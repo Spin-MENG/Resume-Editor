@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resume Editor"
+  short_description: "Tailor evidence-based resumes to target jobs"
+  default_prompt: "Use $resume-editor to tailor my resume to this job description without inventing facts."

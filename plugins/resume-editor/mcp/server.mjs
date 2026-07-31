@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { pathToFileURL } from "node:url";
+import { findClaimsToVerify } from "../skills/resume-editor/scripts/find-claims-to-verify.mjs";
 
 const PROTOCOL_VERSION = "2025-06-18";
 
@@ -146,8 +147,8 @@ const tools = [
   },
   {
     name: "extract_jd_signals",
-    title: "Extract JD signals",
-    description: "Extracts role, skill, responsibility, and qualification signals from a pasted job description.",
+    title: "Extract candidate JD signals",
+    description: "Returns heuristic candidate role, skill, responsibility, and qualification signals from a pasted JD. Verify every result against the original JD before use.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -167,6 +168,36 @@ const tools = [
         keywords: { type: "array", items: { type: "string" } }
       },
       required: ["skills", "responsibilities", "qualifications", "keywords"]
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+  },
+  {
+    name: "find_claims_to_verify",
+    title: "Find resume claims to verify",
+    description: "Flags unresolved placeholders and numeric, ranking, ownership, or causal wording that is not found in an optional source draft. It does not determine whether a claim is true.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        draft: {
+          type: "object",
+          description: "The proposed Resume Editor draft or content object to review."
+        },
+        sourceDraft: {
+          type: "object",
+          description: "Optional original draft or content object used only for text comparison."
+        }
+      },
+      required: ["draft"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        sourceCompared: { type: "boolean" },
+        summary: { type: "object" },
+        findings: { type: "array" }
+      },
+      required: ["sourceCompared", "summary", "findings"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
   },
@@ -294,7 +325,9 @@ function extractJdSignals(jobDescription, targetRole = "") {
     "ETL", "data visualization", "dashboard", "forecasting", "A/B testing",
     "machine learning", "statistics", "customer segmentation", "pricing",
     "inventory", "stakeholder management", "project management", "e-commerce",
-    "retail", "CRM", "GA4", "Looker", "communication", "presentation"
+    "retail", "CRM", "GA4", "Looker", "communication", "presentation",
+    "数据分析", "数据可视化", "机器学习", "统计", "预测", "客户分群", "定价",
+    "库存", "项目管理", "利益相关者沟通", "电商", "零售", "沟通", "汇报"
   ];
   const responsibilityPatterns = [
     /(?:responsible for|you will|the role will|duties include|key responsibilities include)\s+([^.;\n]+)/gi,
@@ -358,7 +391,11 @@ const handlers = {
   },
   extract_jd_signals(args = {}) {
     const signals = extractJdSignals(args.jobDescription, args.targetRole);
-    return resultText(`Extracted ${signals.keywords.length} JD keywords/signals.`, signals);
+    return resultText(`Extracted ${signals.keywords.length} heuristic JD candidate signal(s); verify them against the source JD.`, signals);
+  },
+  find_claims_to_verify(args = {}) {
+    const report = findClaimsToVerify(args.draft, args.sourceDraft || null);
+    return resultText(`Found ${report.summary.total} resume claim(s) requiring review.`, report);
   },
   build_resume_import_payload(args = {}) {
     const draft = buildDraft(args.content, args);
@@ -386,8 +423,8 @@ async function handleRequest(message) {
         result: {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
-          serverInfo: { name: "resume-editor", version: "0.1.0" },
-          instructions: "Use these tools to validate Resume Editor drafts, extract JD signals, and package importable JSON. Do not invent resume facts."
+          serverInfo: { name: "resume-editor", version: "0.2.0" },
+          instructions: "Use these tools to validate Resume Editor drafts, extract candidate JD signals, flag claims that require verification, and package importable JSON. Do not invent resume facts or present a simulated ATS score."
         }
       };
     }

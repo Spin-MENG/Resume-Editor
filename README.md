@@ -121,8 +121,9 @@ codex plugin add resume-editor@resume-tools
 
 然后重新打开一个 Codex session。你可以让 Codex：
 
-- 根据 JD 提取关键词和能力要求
-- 检查简历草稿结构
+- 按 `Required / Core / Preferred / Context` 分析 JD，并回到原文核对
+- 建立 `Direct / Transferable / Missing` 证据矩阵，区分已有证据、可迁移证据和缺口
+- 检查简历草稿结构及需要人工确认的数字、归因和强所有权表述
 - 生成可导入网页编辑器的 draft JSON
 
 ### 让 Codex 介入修改简历的流程
@@ -139,22 +140,23 @@ codex plugin add resume-editor@resume-tools
 把下面这段发给 Codex，然后在后面粘贴 JD 和你的草稿 JSON：
 
 ```text
-你是我的简历优化助手。请使用当前仓库里的 resume-editor 工具来处理我的简历。
+请使用 $resume-editor 和当前仓库里的 Resume Editor 工具处理我的简历。
 
 我会提供：
 1. 目标岗位 JD
 2. 从 index.html 右上角“导出草稿”得到的 Resume Editor JSON
 
 请你完成：
-1. 先提取 JD 中最重要的岗位职责、硬技能、软技能、关键词和筛选标准。
-2. 对照我的简历草稿，指出最需要增强的 3-5 个匹配点。
-3. 直接改写简历内容，让它更匹配这个 JD。
-4. 每条经历 bullet 尽量使用“动作 + 方法/工具 + 结果”的结构。
-5. 控制在一页 A4 内，优先保留与 JD 最相关的内容。
-6. 不要编造经历、公司、学校、证书或无法证明的数据。如果需要量化但原文没有数据，请用 [补充具体数字] 标记。
-7. 最后输出两部分：
-   A. 修改摘要：说明你改了什么、为什么改。
-   B. 可导入 Resume Editor 的 JSON：必须是完整、合法、可直接导入 index.html 的 JSON，不要夹杂解释文字。
+1. 把 JD 要求按 Required / Core / Preferred / Context 分类；每项保留可核对的 JD 原文依据，不要把启发式关键词当成结论。
+2. 建立 Direct / Transferable / Missing 证据矩阵，对照我的原始草稿说明哪些要求有直接证据、哪些仅可迁移、哪些确实缺失。
+3. 直接改写简历，让它更匹配 JD。每条经历优先使用“动作 + 对象/范围 + 方法/工具 + 结果”的结构，并保持原有事实、时间、职级和责任边界。
+4. 控制在一页 A4 内：先按与 JD 的相关性删减和合并，再压缩措辞；不要用极小字号掩盖内容过多。
+5. 不得编造或强化经历、指标、因果、所有权、公司、学校、证书和技能；不得输出没有依据的“ATS 匹配率”。需要我补充的信息统一写成 [待确认：具体问题]。
+6. 生成 JSON 前调用可用的 schema、validation、claim review 和 import payload 工具；claim review 只用于提示人工核对，不能代替事实判断。
+7. 最后输出：
+   A. 修改摘要及最重要的 JD 匹配变化。
+   B. 完整、合法、可直接导入 index.html 的 Resume Editor JSON；JSON 代码块内不要夹杂解释文字。
+   C. 待确认事实、仍然缺失的 JD 证据和一页排版风险；没有则明确写“无”。
 
 下面是 JD：
 [把 JD 粘贴在这里]
@@ -166,7 +168,7 @@ codex plugin add resume-editor@resume-tools
 如果你已经安装了 Codex plugin，也可以在 prompt 里加一句：
 
 ```text
-如果可用，请调用 resume-editor 的 schema、validation 和 import payload 工具，确保最终 JSON 可以直接导入网页编辑器。
+如果可用，请调用 resume-editor 的 schema、validation、claim review 和 import payload 工具，确保最终 JSON 可导入网页编辑器，并把需要人工确认的表述单独列出。
 ```
 
 ## 本地启动 MCP HTTP 服务
@@ -195,8 +197,9 @@ http://127.0.0.1:8787/mcp
 
 ## 开发检查
 
-修改 CV 导入解析逻辑后，可以运行：
+修改 CV 导入解析逻辑、专业知识、Skill 或 MCP 工具后，可以运行：
 
 ```bash
 node tests/import-cv-parser-smoke.mjs
+node tests/resume-knowledge-smoke.mjs
 ```

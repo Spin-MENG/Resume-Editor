@@ -2,7 +2,7 @@
   "mcpServers": {
     "resume-editor": {
       "title": "Resume Editor",
-      "description": "Create, validate, and package JSON drafts for the Resume Editor HTML tool.",
+      "description": "Validate and package Resume Editor drafts, extract candidate JD signals, and flag claims for verification.",
       "cwd": ".",
       "command": "node",
       "args": [
