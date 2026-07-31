@@ -1,0 +1,34 @@
+{
+  "name": "resume-editor",
+  "version": "0.1.0+codex.20260731042649",
+  "description": "Create, validate, and optimize importable drafts for the Resume Editor HTML tool.",
+  "author": {
+    "name": "Meng Jingrui"
+  },
+  "license": "MIT",
+  "keywords": [
+    "resume",
+    "cv",
+    "job-description",
+    "career",
+    "editor"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Resume Editor",
+    "shortDescription": "Turn JD feedback into importable resume drafts.",
+    "longDescription": "Resume Editor helps ChatGPT and Codex work with the editable HTML resume tool. It exposes schema, validation, JD signal extraction, and import-payload packaging so users can optimize a resume in conversation and import the result back into the editor.",
+    "developerName": "Meng Jingrui",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Optimize my resume draft for this JD.",
+      "Create a Resume Editor import JSON.",
+      "Check whether my resume draft is one-page safe."
+    ],
+    "brandColor": "#8A5A2B"
+  },
+  "mcpServers": "./.mcp.json"
+}

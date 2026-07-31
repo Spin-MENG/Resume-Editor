@@ -1,0 +1,1729 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="content-version" content="2026-07-31-public-v1">
+  <meta name="description" content="Editable one-page resume template with local autosave and PDF export.">
+  <title>Resume Editor</title>
+  <!--
+    Resume editor source of truth.
+    When the default resume copy is changed for a new JD, also increment the
+    content-version meta value so the new source copy is not masked by an older
+    browser autosave.
+  -->
+  <style>
+    :root {
+      --ink: #15191d;
+      --muted: #5f6871;
+      --line: #c9cfd4;
+      --paper: #ffffff;
+      --workspace: #e9edf0;
+      --accent: #8a5a2b;
+      --accent-soft: #f7efe6;
+      --focus: #bf7b36;
+      --success: #2f7355;
+      --warning: #9a5d1c;
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-padding-x: 11.5mm;
+      --page-padding-top: 10.5mm;
+      --page-padding-bottom: 9.5mm;
+      --editor-width: min(100%, 210mm);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Noto Sans", sans-serif;
+      color: var(--ink);
+      background: var(--workspace);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--workspace);
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.92), transparent 31rem),
+        var(--workspace);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .editor-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(21, 25, 29, 0.12);
+      background: rgba(247, 249, 250, 0.94);
+      box-shadow: 0 7px 24px rgba(23, 31, 38, 0.06);
+      backdrop-filter: blur(16px);
+    }
+
+    .editor-bar__inner {
+      width: min(calc(100% - 32px), 1120px);
+      min-height: 64px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .editor-brand {
+      min-width: 0;
+    }
+
+    .editor-brand__title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 720;
+      letter-spacing: 0.01em;
+      color: #20262b;
+    }
+
+    .editor-brand__hint {
+      margin: 3px 0 0;
+      overflow: hidden;
+      color: #78818a;
+      font-size: 11px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .editor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .print-mode-control {
+      min-height: 36px;
+      padding: 0 5px 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d4d9dd;
+      border-radius: 8px;
+      background: #fff;
+      color: #667079;
+      font-size: 11px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .print-mode-control select {
+      min-height: 28px;
+      padding: 0 22px 0 7px;
+      border: 0;
+      border-radius: 6px;
+      background-color: #f0f3f5;
+      color: #30383f;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .font-size-control {
+      min-height: 36px;
+      padding: 0 8px 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid #d4d9dd;
+      border-radius: 8px;
+      background: #fff;
+      color: #667079;
+      font-size: 11px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .font-size-control input[type="range"] {
+      width: 72px;
+      margin: 0;
+    }
+
+    .font-size-control output {
+      min-width: 34px;
+      color: #30383f;
+      font-size: 11px;
+      font-weight: 750;
+      text-align: right;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      min-height: 30px;
+      align-items: center;
+      gap: 7px;
+      padding: 0 9px;
+      border: 1px solid #d8dde1;
+      border-radius: 999px;
+      background: #fff;
+      color: #667079;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .status-chip::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      content: "";
+      box-shadow: 0 0 0 3px rgba(47, 115, 85, 0.1);
+    }
+
+    .status-chip[data-state="warning"]::before {
+      background: var(--warning);
+      box-shadow: 0 0 0 3px rgba(154, 93, 28, 0.1);
+    }
+
+    .toolbar-button {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid #d4d9dd;
+      border-radius: 8px;
+      background: #fff;
+      color: #333b42;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background 150ms ease;
+    }
+
+    .toolbar-button:hover {
+      border-color: #aeb6bd;
+      box-shadow: 0 3px 10px rgba(23, 31, 38, 0.08);
+    }
+
+    .toolbar-button:active {
+      transform: translateY(1px);
+    }
+
+    .toolbar-button:focus-visible,
+    .photo-action:focus-visible,
+    .photo-frame:focus-visible,
+    .panel-close:focus-visible,
+    select:focus-visible,
+    input[type="range"]:focus-visible {
+      outline: 3px solid rgba(191, 123, 54, 0.27);
+      outline-offset: 2px;
+    }
+
+    .toolbar-button--primary {
+      min-height: 40px;
+      padding-inline: 17px;
+      border-color: var(--ink);
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .toolbar-button--primary:hover {
+      border-color: #30373d;
+      background: #30373d;
+    }
+
+    .workspace {
+      width: 100%;
+      padding: 28px 16px 64px;
+    }
+
+    .resume-paper {
+      position: relative;
+      width: var(--editor-width);
+      min-height: var(--page-height);
+      margin: 0 auto;
+      padding: var(--page-padding-top) var(--page-padding-x) var(--page-padding-bottom);
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+      background: var(--paper);
+      box-shadow:
+        0 1px 2px rgba(20, 25, 30, 0.08),
+        0 16px 46px rgba(20, 25, 30, 0.14);
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .resume-document {
+      min-height: 0;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      font-size: 8.05pt;
+    }
+
+    .resume-header {
+      position: relative;
+      min-height: 0;
+      padding: 1.2mm 0 3mm;
+      border-bottom: 0.35mm solid var(--ink);
+    }
+
+    .resume-header__copy {
+      max-width: none;
+    }
+
+    .resume-name {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2.857143em;
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: 0.025em;
+      color: #111417;
+    }
+
+    .resume-headline {
+      margin: 2.8mm 0 0;
+      color: #30363b;
+      font-size: 1.118012em;
+      font-weight: 700;
+      line-height: 1.22;
+      letter-spacing: 0.015em;
+    }
+
+    .resume-contact {
+      margin: 2mm 0 0;
+      color: var(--muted);
+      font-size: 0.956522em;
+      font-weight: 520;
+      line-height: 1.25;
+      letter-spacing: 0.01em;
+    }
+
+    .photo-shell {
+      display: none !important;
+    }
+
+    .photo-frame {
+      position: relative;
+      width: 25mm;
+      height: 32mm;
+      padding: 0;
+      overflow: hidden;
+      border: 0.3mm solid #9ca4aa;
+      border-radius: 1.2mm;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,255,255,0.3)),
+        repeating-linear-gradient(45deg, #eef1f3 0, #eef1f3 5px, #e7ebed 5px, #e7ebed 10px);
+      color: #67717a;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .photo-frame.has-photo {
+      border-color: #6f777e;
+      background: #e9ecee;
+      cursor: grab;
+    }
+
+    .photo-frame.has-photo:active {
+      cursor: grabbing;
+    }
+
+    .photo-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      max-width: none;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      transform-origin: 0 0;
+      will-change: transform, width, height;
+    }
+
+    .photo-image:not([src]) {
+      display: none;
+    }
+
+    .photo-placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      gap: 1.2mm;
+      padding: 3mm;
+      text-align: center;
+    }
+
+    .photo-placeholder__icon {
+      display: block;
+      font-size: 16pt;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .photo-placeholder__text {
+      font-size: 6.7pt;
+      font-weight: 650;
+      line-height: 1.3;
+    }
+
+    .photo-frame.has-photo .photo-placeholder {
+      display: none;
+    }
+
+    .photo-edit-badge {
+      position: absolute;
+      right: 1.2mm;
+      bottom: 1.2mm;
+      display: none;
+      padding: 1mm 1.6mm;
+      border-radius: 999px;
+      background: rgba(16, 20, 24, 0.8);
+      color: #fff;
+      font-size: 5.8pt;
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .photo-frame.has-photo:hover .photo-edit-badge,
+    .photo-frame.has-photo:focus-visible .photo-edit-badge {
+      display: block;
+    }
+
+    .photo-panel {
+      position: absolute;
+      top: 35mm;
+      right: 0;
+      z-index: 20;
+      width: 74mm;
+      padding: 4mm;
+      border: 1px solid #d6dce0;
+      border-radius: 3mm;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 12px 35px rgba(24, 31, 38, 0.19);
+      color: #30373d;
+    }
+
+    .photo-panel[hidden] {
+      display: none;
+    }
+
+    .photo-panel__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 3mm;
+    }
+
+    .photo-panel__title {
+      margin: 0;
+      font-size: 9pt;
+      font-weight: 750;
+      line-height: 1.2;
+    }
+
+    .photo-panel__hint {
+      margin: 1mm 0 0;
+      color: #737c84;
+      font-size: 7pt;
+      line-height: 1.35;
+    }
+
+    .panel-close {
+      width: 7mm;
+      height: 7mm;
+      padding: 0;
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 50%;
+      background: #edf0f2;
+      color: #475159;
+      cursor: pointer;
+      font-size: 11pt;
+      line-height: 1;
+    }
+
+    .zoom-control {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 2.2mm;
+      margin-top: 3.5mm;
+    }
+
+    .zoom-control label,
+    .zoom-value {
+      color: #5c666e;
+      font-size: 7pt;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .photo-panel__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.8mm;
+      margin-top: 3.5mm;
+    }
+
+    .photo-action {
+      min-height: 8mm;
+      padding: 0 2.8mm;
+      border: 1px solid #d3d9dd;
+      border-radius: 1.7mm;
+      background: #f8f9fa;
+      color: #3d464d;
+      cursor: pointer;
+      font-size: 7pt;
+      font-weight: 680;
+    }
+
+    .photo-action:hover {
+      border-color: #aeb7be;
+      background: #fff;
+    }
+
+    .photo-action--danger {
+      color: #9c332c;
+    }
+
+    .photo-action:disabled,
+    input[type="range"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.44;
+    }
+
+    .resume-body {
+      flex: 1;
+      padding-top: 2.7mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2.05mm;
+    }
+
+    .resume-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .section-title {
+      margin: 0 0 1.35mm;
+      padding-bottom: 0.85mm;
+      border-bottom: 0.2mm solid var(--line);
+      color: #252b30;
+      font-size: 1.062112em;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: 0.135em;
+    }
+
+    .section-copy,
+    .resume-item,
+    .skill-list {
+      color: #30363b;
+      font-size: 1em;
+      line-height: 1.27;
+    }
+
+    .section-copy {
+      margin: 0;
+      text-align: left;
+    }
+
+    .resume-item + .resume-item {
+      margin-top: 1.8mm;
+    }
+
+    .item-heading {
+      margin: 0;
+      color: #181d21;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.055901em;
+      font-weight: 700;
+      line-height: 1.16;
+    }
+
+    .item-meta {
+      margin: 0.75mm 0 0;
+      color: #373e44;
+      font-size: 0.975155em;
+      font-weight: 560;
+      line-height: 1.22;
+    }
+
+    .item-meta strong {
+      color: #23292e;
+      font-weight: 780;
+    }
+
+    .detail-list,
+    .skill-list {
+      margin: 1mm 0 0;
+      padding-left: 4mm;
+    }
+
+    .detail-list li,
+    .skill-list li {
+      margin: 0.55mm 0 0;
+      padding-left: 0.4mm;
+    }
+
+    .detail-list li::marker,
+    .skill-list li::marker {
+      color: #444b51;
+      font-size: 0.78em;
+    }
+
+    .detail-list strong,
+    .skill-list strong,
+    .coursework strong {
+      color: #23282d;
+      font-weight: 780;
+    }
+
+    .coursework {
+      margin: 1.2mm 0 0;
+      color: #30363b;
+      font-size: 0.975155em;
+      line-height: 1.28;
+    }
+
+    [contenteditable="true"] {
+      border-radius: 1mm;
+      outline: 0 solid transparent;
+      transition: background-color 130ms ease, box-shadow 130ms ease;
+    }
+
+    [contenteditable="true"]:hover {
+      background: rgba(138, 90, 43, 0.045);
+      box-shadow: 0 0 0 1.2mm rgba(138, 90, 43, 0.045);
+    }
+
+    [contenteditable="true"]:focus {
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 1.2mm var(--accent-soft), 0 0 0 1.55mm rgba(191, 123, 54, 0.43);
+    }
+
+    .screen-note {
+      width: var(--editor-width);
+      margin: 14px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: #6f7880;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .screen-note p {
+      margin: 0;
+    }
+
+    .keyboard-hint {
+      white-space: nowrap;
+    }
+
+    kbd {
+      padding: 2px 5px;
+      border: 1px solid #cbd1d5;
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: #fff;
+      color: #606a72;
+      font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .toast-region {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 100;
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      max-width: min(360px, calc(100vw - 36px));
+      padding: 10px 13px;
+      border: 1px solid rgba(21, 25, 29, 0.12);
+      border-radius: 8px;
+      background: rgba(25, 30, 34, 0.94);
+      box-shadow: 0 10px 28px rgba(20, 25, 30, 0.2);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: toast-in 160ms ease forwards, toast-out 180ms ease 3.2s forwards;
+    }
+
+    @keyframes toast-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toast-out {
+      to { opacity: 0; transform: translateY(5px); }
+    }
+
+    @media (max-width: 760px) {
+      .editor-bar__inner {
+        width: 100%;
+        min-height: auto;
+        padding: 10px 12px;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 9px;
+      }
+
+      .editor-actions {
+        width: 100%;
+      }
+
+      .status-chip {
+        margin-right: auto;
+      }
+
+      .print-mode-control {
+        margin-left: auto;
+      }
+
+      .font-size-control {
+        margin-left: 0;
+      }
+
+      .workspace {
+        overflow-x: auto;
+        padding: 18px 10px 48px;
+      }
+
+      .resume-paper,
+      .screen-note {
+        width: 210mm;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .editor-brand__hint,
+      .status-chip {
+        display: none;
+      }
+
+      .print-mode-control {
+        margin-left: 0;
+      }
+
+      .font-size-control {
+        flex: 1 1 170px;
+      }
+
+      .toolbar-button {
+        flex: 1;
+      }
+
+      .screen-note {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      :root,
+      html,
+      body {
+        background: #fff !important;
+      }
+
+      html,
+      body {
+        width: auto;
+        min-width: 0;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+      }
+
+      .editor-bar,
+      .screen-note,
+      .photo-panel,
+      .photo-edit-badge,
+      .toast-region {
+        display: none !important;
+      }
+
+      .workspace {
+        width: auto;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+      }
+
+      .resume-paper {
+        width: auto;
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        box-shadow: none;
+      }
+
+      body.print-mode-single {
+        width: 210mm;
+        height: 296mm;
+        max-height: 296mm;
+        overflow: hidden;
+      }
+
+      body.print-mode-single .workspace {
+        width: 210mm;
+        height: 296mm;
+        max-height: 296mm;
+        padding: 10.5mm 11.5mm 10mm;
+        overflow: hidden;
+      }
+
+      body.print-mode-single .resume-paper {
+        width: 100%;
+        height: 275.5mm;
+        min-height: 275.5mm;
+        max-height: 275.5mm;
+      }
+
+      body.print-mode-single .resume-document {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 103.092784%;
+        height: 284mm;
+        min-height: 284mm;
+        transform: scale(0.97);
+        transform-origin: top left;
+      }
+
+      body.print-mode-single .resume-header {
+        padding: 0.6mm 0 2mm;
+      }
+
+      body.print-mode-single .resume-headline {
+        margin-top: 2mm;
+      }
+
+      body.print-mode-single .resume-contact {
+        margin-top: 1.35mm;
+      }
+
+      body.print-mode-single .resume-body {
+        padding-top: 1.8mm;
+        flex: 1 1 auto;
+        justify-content: space-between;
+        gap: 1.3mm;
+      }
+
+      body.print-mode-single .section-title {
+        margin-bottom: 0.9mm;
+        padding-bottom: 0.55mm;
+      }
+
+      body.print-mode-single .section-copy,
+      body.print-mode-single .resume-item,
+      body.print-mode-single .skill-list {
+        line-height: 1.21;
+      }
+
+      body.print-mode-single .resume-item + .resume-item {
+        margin-top: 1.15mm;
+      }
+
+      body.print-mode-single .item-meta {
+        margin-top: 0.5mm;
+      }
+
+      body.print-mode-single .detail-list,
+      body.print-mode-single .skill-list {
+        margin-top: 0.6mm;
+      }
+
+      body.print-mode-single .detail-list li,
+      body.print-mode-single .skill-list li {
+        margin-top: 0.2mm;
+      }
+
+      body.print-mode-single .coursework {
+        margin-top: 0.75mm;
+      }
+
+      body.print-mode-single .resume-item,
+      body.print-mode-single .resume-section,
+      body.print-mode-single .detail-list li,
+      body.print-mode-single .skill-list li {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      body.print-mode-auto,
+      body.print-mode-auto .workspace {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+      }
+
+      body.print-mode-auto .workspace {
+        width: 210mm;
+        padding: 10.5mm 11.5mm 9.5mm;
+      }
+
+      body.print-mode-auto .resume-paper {
+        height: auto;
+        min-height: 276mm;
+        max-height: none;
+        overflow: visible;
+      }
+
+      body.print-mode-auto .resume-document {
+        position: static;
+        width: auto;
+        min-height: 276mm;
+        transform: none;
+      }
+
+      .resume-header.photo-empty {
+        padding-right: 0;
+      }
+
+      .photo-frame:not(.has-photo) {
+        display: none;
+      }
+
+      [contenteditable="true"],
+      [contenteditable="true"]:hover,
+      [contenteditable="true"]:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+      }
+
+      .resume-item,
+      .resume-section,
+      .detail-list li,
+      .skill-list li {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+  </style>
+</head>
+<body class="print-mode-single">
+  <header class="editor-bar" aria-label="简历编辑工具栏">
+    <div class="editor-bar__inner">
+      <div class="editor-brand">
+        <p class="editor-brand__title">简历编辑器</p>
+        <p class="editor-brand__hint" id="saveStatus" role="status" aria-live="polite">点击正文即可编辑，修改会自动保存在当前浏览器</p>
+      </div>
+      <div class="editor-actions">
+        <span class="status-chip" id="pageStatus">A4 · 检查中</span>
+        <label class="print-mode-control" for="printMode">
+          <span>PDF 长度</span>
+          <select id="printMode" aria-label="选择 PDF 导出长度">
+            <option value="single" selected>单页 A4</option>
+            <option value="auto">自动分页</option>
+          </select>
+        </label>
+        <label class="font-size-control" for="fontScale">
+          <span>整体字号</span>
+          <input id="fontScale" type="range" min="90" max="115" step="1" value="100" aria-label="调整简历整体字号">
+          <output id="fontScaleValue" for="fontScale">100%</output>
+        </label>
+        <button class="toolbar-button" id="importDraftButton" type="button">导入草稿</button>
+        <button class="toolbar-button" id="exportDraftButton" type="button">导出草稿</button>
+        <button class="toolbar-button" id="resetButton" type="button">恢复模板</button>
+        <button class="toolbar-button toolbar-button--primary" id="exportButton" type="button" title="打开系统打印窗口并另存为 PDF">导出 PDF</button>
+        <input id="draftInput" type="file" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <article class="resume-paper" id="resumePaper" aria-label="Editable resume">
+      <div class="resume-document" id="resumeDocument">
+      <header class="resume-header photo-empty" id="resumeHeader">
+        <div class="resume-header__copy">
+          <h1 class="resume-name" contenteditable="true" spellcheck="false" data-edit-id="name" data-single-line>YOUR NAME</h1>
+          <p class="resume-headline" contenteditable="true" spellcheck="true" data-edit-id="headline" data-single-line>Target Role | Core Skill Area | Industry / Function</p>
+          <p class="resume-contact" contenteditable="true" spellcheck="false" data-edit-id="contact" data-single-line>City, Country | email@example.com | +00 0000 0000 | LinkedIn / Portfolio</p>
+        </div>
+
+        <div class="photo-shell">
+          <button class="photo-frame" id="photoFrame" type="button" aria-label="上传或编辑证件照" aria-haspopup="dialog">
+            <img class="photo-image" id="photoImage" alt="证件照" draggable="false">
+            <span class="photo-placeholder" aria-hidden="true">
+              <span class="photo-placeholder__icon">＋</span>
+              <span class="photo-placeholder__text">上传证件照</span>
+            </span>
+            <span class="photo-edit-badge" aria-hidden="true">拖动裁切</span>
+          </button>
+
+          <section class="photo-panel" id="photoPanel" role="dialog" aria-modal="false" aria-labelledby="photoPanelTitle" hidden>
+            <div class="photo-panel__header">
+              <div>
+                <h2 class="photo-panel__title" id="photoPanelTitle">证件照</h2>
+                <p class="photo-panel__hint">在照片上拖动调整裁切位置，使用滑杆缩放。</p>
+              </div>
+              <button class="panel-close" id="photoPanelClose" type="button" aria-label="关闭照片工具">×</button>
+            </div>
+            <div class="zoom-control">
+              <label for="photoZoom">缩放</label>
+              <input id="photoZoom" type="range" min="100" max="280" step="1" value="100" disabled>
+              <output class="zoom-value" id="zoomValue" for="photoZoom">100%</output>
+            </div>
+            <div class="photo-panel__actions">
+              <button class="photo-action" id="photoUploadButton" type="button">上传 / 更换</button>
+              <button class="photo-action" id="photoCenterButton" type="button" disabled>居中</button>
+              <button class="photo-action photo-action--danger" id="photoDeleteButton" type="button" disabled>删除照片</button>
+            </div>
+          </section>
+          <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" hidden>
+        </div>
+      </header>
+
+      <div class="resume-body">
+        <section class="resume-section" aria-labelledby="profile-title">
+          <h2 class="section-title" id="profile-title" contenteditable="true" spellcheck="false" data-edit-id="section-profile" data-single-line>PROFESSIONAL PROFILE</h2>
+          <p class="section-copy" contenteditable="true" spellcheck="true" data-edit-id="profile-copy">Concise professional summary tailored to the target role. Mention your years of experience, strongest domain knowledge, most relevant tools, and the business outcomes you can deliver. Keep this section specific, evidence-based, and aligned with the job description.</p>
+        </section>
+
+        <section class="resume-section" aria-labelledby="experience-title">
+          <h2 class="section-title" id="experience-title" contenteditable="true" spellcheck="false" data-edit-id="section-experience" data-single-line>PROFESSIONAL EXPERIENCE</h2>
+
+          <article class="resume-item">
+            <h3 class="item-heading" contenteditable="true" spellcheck="true" data-edit-id="exp-current-company" data-single-line>Company / Organization Name</h3>
+            <p class="item-meta" contenteditable="true" spellcheck="true" data-edit-id="exp-current-meta" data-single-line><strong>Role Title</strong> | Month YYYY - Present</p>
+            <ul class="detail-list">
+              <li contenteditable="true" spellcheck="true" data-edit-id="exp-current-1"><strong>Impact Area:</strong> Describe a project or responsibility using action, method, and measurable result. Replace generic duties with outcomes whenever possible.</li>
+              <li contenteditable="true" spellcheck="true" data-edit-id="exp-current-2"><strong>Tools / Process:</strong> Name the systems, tools, analysis methods, or workflows you used, then connect them to a practical business or team decision.</li>
+              <li contenteditable="true" spellcheck="true" data-edit-id="exp-current-3"><strong>Collaboration:</strong> Explain how you worked with stakeholders, translated requirements, improved execution, or communicated findings.</li>
+              <li contenteditable="true" spellcheck="true" data-edit-id="exp-current-4"><strong>Result:</strong> Add a concrete metric, scale, efficiency gain, quality improvement, revenue impact, cost reduction, or customer outcome.</li>
+            </ul>
+          </article>
+
+          <article class="resume-item">
+            <h3 class="item-heading" contenteditable="true" spellcheck="true" data-edit-id="exp-previous-company" data-single-line>Previous Company / Project Team</h3>
+            <p class="item-meta" contenteditable="true" spellcheck="true" data-edit-id="exp-previous-meta" data-single-line><strong>Previous Role Title</strong> | Month YYYY - Month YYYY</p>
+            <ul class="detail-list">
+              <li contenteditable="true" spellcheck="true" data-edit-id="exp-previous-1">Summarize the most relevant achievement from this role. Focus on the part that strengthens your fit for the role you are applying to now.</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="resume-section" aria-labelledby="education-title">
+          <h2 class="section-title" id="education-title" contenteditable="true" spellcheck="false" data-edit-id="section-education" data-single-line>EDUCATION</h2>
+          <article class="resume-item">
+            <h3 class="item-heading" contenteditable="true" spellcheck="true" data-edit-id="education-school" data-single-line>University / Institution Name</h3>
+            <p class="item-meta" contenteditable="true" spellcheck="true" data-edit-id="education-degrees"><strong>Degree / Major</strong> | GPA / Honors if useful | Month YYYY - Month YYYY<br><strong>Additional Degree / Certificate</strong> | Month YYYY - Month YYYY</p>
+            <p class="coursework" contenteditable="true" spellcheck="true" data-edit-id="education-coursework"><strong>Relevant Coursework:</strong> Course or training names that support the target role; remove this line if it is not useful.</p>
+          </article>
+        </section>
+
+        <section class="resume-section" aria-labelledby="research-title">
+          <h2 class="section-title" id="research-title" contenteditable="true" spellcheck="false" data-edit-id="section-research" data-single-line>PROJECTS / RESEARCH</h2>
+
+          <article class="resume-item">
+            <h3 class="item-heading" contenteditable="true" spellcheck="true" data-edit-id="project-one-heading" data-single-line>Relevant Project Name</h3>
+            <p class="item-meta" contenteditable="true" spellcheck="true" data-edit-id="project-one-meta" data-single-line><strong>Your Role / Context</strong> | Month YYYY - Month YYYY</p>
+            <ul class="detail-list">
+              <li contenteditable="true" spellcheck="true" data-edit-id="project-one-1">Describe the problem, your contribution, the methods or tools used, and the final result. Prioritize evidence that matches the job description.</li>
+            </ul>
+          </article>
+
+          <article class="resume-item">
+            <h3 class="item-heading" contenteditable="true" spellcheck="true" data-edit-id="project-two-heading" data-single-line>Second Project / Publication / Case Study</h3>
+            <p class="item-meta" contenteditable="true" spellcheck="true" data-edit-id="project-two-meta" data-single-line><strong>Your Role / Recognition</strong></p>
+            <ul class="detail-list">
+              <li contenteditable="true" spellcheck="true" data-edit-id="project-two-1">Use this space for one additional proof point. Delete the line if you need more room for professional experience.</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="resume-section" aria-labelledby="skills-title">
+          <h2 class="section-title" id="skills-title" contenteditable="true" spellcheck="false" data-edit-id="section-skills" data-single-line>SKILLS &amp; AWARDS</h2>
+          <ul class="skill-list">
+            <li contenteditable="true" spellcheck="true" data-edit-id="skill-1"><strong>Technical Skills:</strong> Tools, software, programming languages, platforms, or professional systems relevant to the target role</li>
+            <li contenteditable="true" spellcheck="true" data-edit-id="skill-2"><strong>Methods:</strong> Analytical methods, operating processes, research skills, design skills, or domain-specific capabilities</li>
+            <li contenteditable="true" spellcheck="true" data-edit-id="skill-3"><strong>Business Strengths:</strong> Stakeholder communication, project management, commercial thinking, problem solving, or execution strengths</li>
+            <li contenteditable="true" spellcheck="true" data-edit-id="skill-4"><strong>Languages:</strong> Language 1 (level); Language 2 (level)</li>
+            <li contenteditable="true" spellcheck="true" data-edit-id="skill-5"><strong>Awards / Certifications:</strong> Award, certification, license, or notable recognition</li>
+          </ul>
+        </section>
+      </div>
+      </div>
+    </article>
+
+    <div class="screen-note" aria-hidden="true">
+      <p>默认导出单页 A4；选择“自动分页”后，可在系统打印窗口自选页码。草稿只保存在当前浏览器，使用“导出草稿”可备份。</p>
+      <p class="keyboard-hint"><kbd>⌘/Ctrl</kbd> + <kbd>P</kbd> 也可导出</p>
+    </div>
+  </main>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const version = document.querySelector('meta[name="content-version"]')?.content || "v1";
+      const storagePrefix = `public-resume-editor:${version}`;
+      const contentStorageKey = `${storagePrefix}:content`;
+      const photoStorageKey = `${storagePrefix}:photo`;
+      const printModeStorageKey = "public-resume-editor:print-mode";
+      const fontScaleStorageKey = "public-resume-editor:font-scale";
+      const baseResumeFontPt = 8.05;
+
+      const resumePaper = document.getElementById("resumePaper");
+      const resumeDocument = document.getElementById("resumeDocument");
+      const resumeHeader = document.getElementById("resumeHeader");
+      const saveStatus = document.getElementById("saveStatus");
+      const pageStatus = document.getElementById("pageStatus");
+      const printMode = document.getElementById("printMode");
+      const fontScale = document.getElementById("fontScale");
+      const fontScaleValue = document.getElementById("fontScaleValue");
+      const resetButton = document.getElementById("resetButton");
+      const exportButton = document.getElementById("exportButton");
+      const importDraftButton = document.getElementById("importDraftButton");
+      const exportDraftButton = document.getElementById("exportDraftButton");
+      const draftInput = document.getElementById("draftInput");
+      const toastRegion = document.getElementById("toastRegion");
+      const editables = [...document.querySelectorAll("[data-edit-id]")];
+
+      const photoFrame = document.getElementById("photoFrame");
+      const photoImage = document.getElementById("photoImage");
+      const photoInput = document.getElementById("photoInput");
+      const photoPanel = document.getElementById("photoPanel");
+      const photoPanelClose = document.getElementById("photoPanelClose");
+      const photoUploadButton = document.getElementById("photoUploadButton");
+      const photoCenterButton = document.getElementById("photoCenterButton");
+      const photoDeleteButton = document.getElementById("photoDeleteButton");
+      const photoZoom = document.getElementById("photoZoom");
+      const zoomValue = document.getElementById("zoomValue");
+
+      let contentSaveTimer = 0;
+      let pageCheckTimer = 0;
+      let statusResetTimer = 0;
+      let photoState = { src: "", zoom: 1, x: 0, y: 0 };
+      let dragState = null;
+      let suppressPhotoClick = false;
+      const initialContent = new Map(editables.map((node) => [node.dataset.editId, node.innerHTML]));
+      const allowedInlineTags = new Set(["BR", "STRONG", "B", "EM", "I"]);
+
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+      function showToast(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        toastRegion.appendChild(toast);
+        window.setTimeout(() => toast.remove(), 3550);
+      }
+
+      function setSaveMessage(message, temporary = false) {
+        window.clearTimeout(statusResetTimer);
+        saveStatus.textContent = message;
+        if (temporary) {
+          statusResetTimer = window.setTimeout(() => {
+            saveStatus.textContent = "点击正文即可编辑，修改会自动保存在当前浏览器";
+          }, 1800);
+        }
+      }
+
+      function sanitizeResumeHtml(value) {
+        const template = document.createElement("template");
+        template.innerHTML = String(value ?? "");
+        const elements = [...template.content.querySelectorAll("*")];
+        elements.forEach((element) => {
+          if (!allowedInlineTags.has(element.tagName)) {
+            element.replaceWith(...element.childNodes);
+            return;
+          }
+          [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+        });
+        return template.innerHTML;
+      }
+
+      function getContentSnapshot() {
+        return Object.fromEntries(editables.map((node) => [node.dataset.editId, node.innerHTML]));
+      }
+
+      function applyContentSnapshot(snapshot) {
+        if (!snapshot || typeof snapshot !== "object") return 0;
+        let appliedCount = 0;
+        editables.forEach((node) => {
+          const value = snapshot[node.dataset.editId];
+          if (typeof value !== "string") return;
+          node.innerHTML = sanitizeResumeHtml(value);
+          appliedCount += 1;
+        });
+        return appliedCount;
+      }
+
+      function saveContentNow() {
+        window.clearTimeout(contentSaveTimer);
+        try {
+          localStorage.setItem(contentStorageKey, JSON.stringify(getContentSnapshot()));
+          setSaveMessage("已自动保存", true);
+        } catch (error) {
+          setSaveMessage("当前浏览器无法自动保存，请保持页面打开");
+          showToast("自动保存失败；你仍可继续编辑并立即导出 PDF。");
+        }
+      }
+
+      function queueContentSave() {
+        setSaveMessage("正在保存…");
+        window.clearTimeout(contentSaveTimer);
+        contentSaveTimer = window.setTimeout(saveContentNow, 450);
+      }
+
+      function restoreSavedContent() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(contentStorageKey) || "null");
+          if (!saved || typeof saved !== "object") return;
+          const appliedCount = applyContentSnapshot(saved);
+          if (appliedCount) setSaveMessage("已恢复上次编辑内容", true);
+        } catch (error) {
+          localStorage.removeItem(contentStorageKey);
+        }
+      }
+
+      function getDraftFileName() {
+        const rawName = document.querySelector('[data-edit-id="name"]')?.textContent || "resume";
+        const safeName = rawName.trim().toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "resume";
+        return `${safeName}-draft.json`;
+      }
+
+      function exportDraft() {
+        saveContentNow();
+        const payload = {
+          app: "public-resume-editor",
+          schemaVersion: 1,
+          exportedAt: new Date().toISOString(),
+          content: getContentSnapshot(),
+          settings: {
+            printMode: printMode.value,
+            fontScale: Number(fontScale.value) || 100
+          }
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = getDraftFileName();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        showToast("草稿文件已导出。");
+      }
+
+      function readTextFile(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("read-failed"));
+          reader.readAsText(file);
+        });
+      }
+
+      async function importDraft(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const parsed = JSON.parse(await readTextFile(file));
+          const snapshot = parsed?.content && typeof parsed.content === "object" ? parsed.content : parsed;
+          const availableCount = editables.filter((node) => typeof snapshot?.[node.dataset.editId] === "string").length;
+          if (!availableCount) throw new Error("invalid-draft");
+          const confirmed = window.confirm("导入草稿会覆盖当前正文内容。确认继续吗？");
+          if (!confirmed) return;
+          const appliedCount = applyContentSnapshot(snapshot);
+          if (!appliedCount) throw new Error("invalid-draft");
+          if (parsed?.settings?.printMode) {
+            const mode = applyPrintMode(parsed.settings.printMode);
+            try { localStorage.setItem(printModeStorageKey, mode); } catch (error) {}
+          }
+          if (parsed?.settings?.fontScale) {
+            const normalizedScale = applyFontScale(parsed.settings.fontScale);
+            try { localStorage.setItem(fontScaleStorageKey, String(normalizedScale)); } catch (error) {}
+          }
+          saveContentNow();
+          queuePageCheck();
+          showToast("草稿已导入。");
+        } catch (error) {
+          showToast("无法导入这个草稿文件，请选择本工具导出的 JSON 文件。");
+        } finally {
+          draftInput.value = "";
+        }
+      }
+
+      function queuePageCheck() {
+        window.clearTimeout(pageCheckTimer);
+        pageCheckTimer = window.setTimeout(checkPageFit, 120);
+      }
+
+      function isPageOverflowing() {
+        const targetHeight = resumePaper.clientWidth * (297 / 210);
+        const actualHeight = resumePaper.getBoundingClientRect().height;
+        return actualHeight > targetHeight + 3;
+      }
+
+      function applyPrintMode(mode = printMode.value) {
+        const normalizedMode = mode === "auto" ? "auto" : "single";
+        printMode.value = normalizedMode;
+        document.body.classList.toggle("print-mode-single", normalizedMode === "single");
+        document.body.classList.toggle("print-mode-auto", normalizedMode === "auto");
+        return normalizedMode;
+      }
+
+      function restorePrintMode() {
+        try {
+          applyPrintMode(localStorage.getItem(printModeStorageKey) || "single");
+        } catch (error) {
+          applyPrintMode("single");
+        }
+      }
+
+      function applyFontScale(value = fontScale.value) {
+        const normalizedScale = Math.round(clamp(Number(value) || 100, 90, 115));
+        fontScale.value = String(normalizedScale);
+        fontScaleValue.value = `${normalizedScale}%`;
+        fontScaleValue.textContent = `${normalizedScale}%`;
+        resumeDocument.style.fontSize = `${(baseResumeFontPt * normalizedScale / 100).toFixed(3)}pt`;
+        return normalizedScale;
+      }
+
+      function restoreFontScale() {
+        try {
+          applyFontScale(localStorage.getItem(fontScaleStorageKey) || "100");
+        } catch (error) {
+          applyFontScale(100);
+        }
+      }
+
+      function checkPageFit() {
+        const overflow = isPageOverflowing();
+        const singlePage = printMode.value === "single";
+        pageStatus.dataset.state = overflow ? "warning" : "ready";
+        if (singlePage) {
+          pageStatus.textContent = overflow ? "单页 · 内容过长" : "A4 · 单页";
+        } else {
+          pageStatus.textContent = overflow ? "A4 · 自动分页" : "A4 · 1 页";
+        }
+      }
+
+      function insertPlainText(event) {
+        event.preventDefault();
+        const text = event.clipboardData?.getData("text/plain") || "";
+        document.execCommand("insertText", false, text);
+      }
+
+      function savePhotoState() {
+        try {
+          localStorage.setItem(photoStorageKey, JSON.stringify(photoState));
+        } catch (error) {
+          showToast("照片较大，浏览器未能保存；本次打开期间仍可正常导出。");
+        }
+      }
+
+      function restorePhotoState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(photoStorageKey) || "null");
+          if (!saved || typeof saved.src !== "string" || !saved.src) return;
+          photoState = {
+            src: saved.src,
+            zoom: clamp(Number(saved.zoom) || 1, 1, 2.8),
+            x: Number(saved.x) || 0,
+            y: Number(saved.y) || 0
+          };
+          syncPhotoUI();
+        } catch (error) {
+          localStorage.removeItem(photoStorageKey);
+        }
+      }
+
+      function getPhotoMetrics() {
+        if (!photoState.src || !photoImage.naturalWidth || !photoImage.naturalHeight) return null;
+        const frameWidth = photoFrame.clientWidth;
+        const frameHeight = photoFrame.clientHeight;
+        const baseScale = Math.max(
+          frameWidth / photoImage.naturalWidth,
+          frameHeight / photoImage.naturalHeight
+        );
+        const scale = baseScale * photoState.zoom;
+        const width = photoImage.naturalWidth * scale;
+        const height = photoImage.naturalHeight * scale;
+        return {
+          frameWidth,
+          frameHeight,
+          width,
+          height,
+          maxX: Math.max(0, (width - frameWidth) / 2),
+          maxY: Math.max(0, (height - frameHeight) / 2)
+        };
+      }
+
+      function renderPhoto() {
+        const metrics = getPhotoMetrics();
+        if (!metrics) return;
+        photoState.x = clamp(photoState.x, -metrics.maxX, metrics.maxX);
+        photoState.y = clamp(photoState.y, -metrics.maxY, metrics.maxY);
+        const left = metrics.frameWidth / 2 + photoState.x - metrics.width / 2;
+        const top = metrics.frameHeight / 2 + photoState.y - metrics.height / 2;
+        photoImage.style.width = `${metrics.width}px`;
+        photoImage.style.height = `${metrics.height}px`;
+        photoImage.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+        photoZoom.value = String(Math.round(photoState.zoom * 100));
+        zoomValue.value = `${Math.round(photoState.zoom * 100)}%`;
+        zoomValue.textContent = `${Math.round(photoState.zoom * 100)}%`;
+      }
+
+      function syncPhotoUI() {
+        const hasPhoto = Boolean(photoState.src);
+        photoFrame.classList.toggle("has-photo", hasPhoto);
+        resumeHeader.classList.toggle("photo-empty", !hasPhoto);
+        photoZoom.disabled = !hasPhoto;
+        photoCenterButton.disabled = !hasPhoto;
+        photoDeleteButton.disabled = !hasPhoto;
+        if (hasPhoto) {
+          if (photoImage.src !== photoState.src) photoImage.src = photoState.src;
+          photoFrame.setAttribute("aria-label", "拖动裁切证件照；点击打开照片工具");
+        } else {
+          photoImage.removeAttribute("src");
+          photoImage.removeAttribute("style");
+          photoFrame.setAttribute("aria-label", "上传证件照");
+          photoZoom.value = "100";
+          zoomValue.value = "100%";
+          zoomValue.textContent = "100%";
+        }
+      }
+
+      function openPhotoPanel() {
+        photoPanel.hidden = false;
+      }
+
+      function closePhotoPanel() {
+        photoPanel.hidden = true;
+      }
+
+      function centerPhoto() {
+        if (!photoState.src) return;
+        photoState.x = 0;
+        photoState.y = 0;
+        renderPhoto();
+        savePhotoState();
+      }
+
+      function deletePhoto() {
+        if (!photoState.src) return;
+        if (!window.confirm("确定删除当前证件照吗？正文内容不会受到影响。")) return;
+        photoState = { src: "", zoom: 1, x: 0, y: 0 };
+        localStorage.removeItem(photoStorageKey);
+        photoInput.value = "";
+        syncPhotoUI();
+        closePhotoPanel();
+        queuePageCheck();
+        showToast("证件照已删除。");
+      }
+
+      function readImageFile(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("read-failed"));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function loadImage(dataUrl) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error("image-invalid"));
+          image.src = dataUrl;
+        });
+      }
+
+      async function compressPhoto(file) {
+        const sourceUrl = await readImageFile(file);
+        const sourceImage = await loadImage(sourceUrl);
+        const maxSide = 1400;
+        const ratio = Math.min(1, maxSide / Math.max(sourceImage.naturalWidth, sourceImage.naturalHeight));
+        const width = Math.max(1, Math.round(sourceImage.naturalWidth * ratio));
+        const height = Math.max(1, Math.round(sourceImage.naturalHeight * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d", { alpha: false });
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, width, height);
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
+        context.drawImage(sourceImage, 0, 0, width, height);
+        return canvas.toDataURL("image/jpeg", 0.88);
+      }
+
+      async function handlePhotoSelection(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) {
+          showToast("请选择 JPG、PNG、WebP 或系统支持的 HEIC 照片。");
+          photoInput.value = "";
+          return;
+        }
+        try {
+          photoUploadButton.disabled = true;
+          photoUploadButton.textContent = "处理中…";
+          const src = await compressPhoto(file);
+          photoState = { src, zoom: 1, x: 0, y: 0 };
+          syncPhotoUI();
+          await new Promise((resolve) => {
+            if (photoImage.complete && photoImage.naturalWidth) resolve();
+            else photoImage.addEventListener("load", resolve, { once: true });
+          });
+          renderPhoto();
+          savePhotoState();
+          openPhotoPanel();
+          queuePageCheck();
+          showToast("证件照已加入，拖动照片即可调整裁切位置。");
+        } catch (error) {
+          showToast("这张照片无法读取，请换用 JPG、PNG 或 WebP 格式。");
+        } finally {
+          photoUploadButton.disabled = false;
+          photoUploadButton.textContent = "上传 / 更换";
+          photoInput.value = "";
+        }
+      }
+
+      editables.forEach((node) => {
+        node.addEventListener("input", () => {
+          queueContentSave();
+          queuePageCheck();
+        });
+        node.addEventListener("paste", insertPlainText);
+        if (node.hasAttribute("data-single-line")) {
+          node.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              node.blur();
+            }
+          });
+        }
+      });
+
+      importDraftButton.addEventListener("click", () => draftInput.click());
+      exportDraftButton.addEventListener("click", exportDraft);
+      draftInput.addEventListener("change", importDraft);
+
+      resetButton.addEventListener("click", () => {
+        const confirmed = window.confirm("确定恢复默认模板吗？当前浏览器中的正文编辑记录会被清除。");
+        if (!confirmed) return;
+        editables.forEach((node) => {
+          node.innerHTML = initialContent.get(node.dataset.editId) || "";
+        });
+        localStorage.removeItem(contentStorageKey);
+        setSaveMessage("已恢复模板", true);
+        queuePageCheck();
+        showToast("正文已恢复为默认模板。");
+      });
+
+      exportButton.addEventListener("click", () => {
+        saveContentNow();
+        closePhotoPanel();
+        const mode = applyPrintMode();
+        if (mode === "single" && isPageOverflowing()) {
+          showToast("当前内容超过一页，单页模式会隐藏超出部分；可改选“自动分页”。");
+        }
+        document.title = "Resume";
+        window.requestAnimationFrame(() => window.print());
+      });
+
+      printMode.addEventListener("change", () => {
+        const mode = applyPrintMode();
+        try {
+          localStorage.setItem(printModeStorageKey, mode);
+        } catch (error) {
+          // The selected mode still applies for the current session.
+        }
+        queuePageCheck();
+      });
+
+      fontScale.addEventListener("input", () => {
+        applyFontScale();
+        queuePageCheck();
+      });
+
+      fontScale.addEventListener("change", () => {
+        const normalizedScale = applyFontScale();
+        try {
+          localStorage.setItem(fontScaleStorageKey, String(normalizedScale));
+        } catch (error) {
+          // The selected font size still applies for the current session.
+        }
+        queuePageCheck();
+      });
+
+      photoFrame.addEventListener("click", () => {
+        if (suppressPhotoClick) return;
+        if (!photoState.src) photoInput.click();
+        else photoPanel.hidden ? openPhotoPanel() : closePhotoPanel();
+      });
+
+      photoFrame.addEventListener("pointerdown", (event) => {
+        if (!photoState.src || event.button !== 0) return;
+        dragState = {
+          pointerId: event.pointerId,
+          startClientX: event.clientX,
+          startClientY: event.clientY,
+          startX: photoState.x,
+          startY: photoState.y,
+          moved: false
+        };
+        photoFrame.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+
+      photoFrame.addEventListener("pointermove", (event) => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        const dx = event.clientX - dragState.startClientX;
+        const dy = event.clientY - dragState.startClientY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) dragState.moved = true;
+        photoState.x = dragState.startX + dx;
+        photoState.y = dragState.startY + dy;
+        renderPhoto();
+      });
+
+      function finishPhotoDrag(event) {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        suppressPhotoClick = dragState.moved;
+        if (photoFrame.hasPointerCapture(event.pointerId)) photoFrame.releasePointerCapture(event.pointerId);
+        dragState = null;
+        renderPhoto();
+        savePhotoState();
+        window.setTimeout(() => { suppressPhotoClick = false; }, 0);
+      }
+
+      photoFrame.addEventListener("pointerup", finishPhotoDrag);
+      photoFrame.addEventListener("pointercancel", finishPhotoDrag);
+
+      photoFrame.addEventListener("keydown", (event) => {
+        if (!photoState.src) {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            photoInput.click();
+          }
+          return;
+        }
+        const movementKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+        if (movementKeys.includes(event.key)) {
+          event.preventDefault();
+          const step = event.shiftKey ? 8 : 2;
+          if (event.key === "ArrowLeft") photoState.x -= step;
+          if (event.key === "ArrowRight") photoState.x += step;
+          if (event.key === "ArrowUp") photoState.y -= step;
+          if (event.key === "ArrowDown") photoState.y += step;
+          renderPhoto();
+          savePhotoState();
+        }
+      });
+
+      photoZoom.addEventListener("input", () => {
+        photoState.zoom = Number(photoZoom.value) / 100;
+        renderPhoto();
+      });
+      photoZoom.addEventListener("change", savePhotoState);
+      photoUploadButton.addEventListener("click", () => photoInput.click());
+      photoCenterButton.addEventListener("click", centerPhoto);
+      photoDeleteButton.addEventListener("click", deletePhoto);
+      photoPanelClose.addEventListener("click", closePhotoPanel);
+      photoInput.addEventListener("change", handlePhotoSelection);
+
+      document.addEventListener("pointerdown", (event) => {
+        if (photoPanel.hidden) return;
+        if (!photoPanel.contains(event.target) && !photoFrame.contains(event.target)) closePhotoPanel();
+      });
+
+      window.addEventListener("resize", () => {
+        renderPhoto();
+        queuePageCheck();
+      });
+      window.addEventListener("beforeprint", () => {
+        saveContentNow();
+        closePhotoPanel();
+        applyPrintMode();
+        renderPhoto();
+      });
+      window.addEventListener("afterprint", queuePageCheck);
+
+      photoImage.addEventListener("load", renderPhoto);
+      restoreSavedContent();
+      restorePhotoState();
+      restorePrintMode();
+      restoreFontScale();
+      syncPhotoUI();
+
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => {
+          renderPhoto();
+          checkPageFit();
+        });
+      } else {
+        window.requestAnimationFrame(checkPageFit);
+      }
+
+      if ("ResizeObserver" in window) {
+        const resizeObserver = new ResizeObserver(queuePageCheck);
+        resizeObserver.observe(resumePaper);
+      }
+    })();
+  </script>
+</body>
+</html>

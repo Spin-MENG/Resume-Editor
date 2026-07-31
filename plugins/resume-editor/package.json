@@ -1,0 +1,14 @@
+{
+  "name": "resume-editor-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "mcp:stdio": "node ./mcp/server.mjs",
+    "mcp:http": "node ./mcp/http-server.mjs",
+    "start": "node ./mcp/http-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
