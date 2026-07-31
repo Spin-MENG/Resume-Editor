@@ -105,7 +105,15 @@ Windows 用户可以进入仓库文件夹后，直接双击 `index.html`。
 
 ## 在 Codex 里连接这个工具
 
-适合让 Codex 根据 JD 帮你优化简历，然后把结果生成可导入 `index.html` 的草稿 JSON。
+完整闭环：
+
+```text
+已有 CV → 网页编辑器 → 导出 JSON 草稿 → Codex 按 JD 优化 → 导入优化后的 JSON → 导出 PDF
+```
+
+这里的网页不会直接登录或调用你的 Codex。网页编辑器和 Codex 之间通过 Resume Editor JSON 草稿交换内容。
+
+### 第一次安装（只需做一次）
 
 前置条件：
 
@@ -119,32 +127,41 @@ codex plugin marketplace add .
 codex plugin add resume-editor@resume-tools
 ```
 
-然后重新打开一个 Codex session。你可以让 Codex：
+安装后重新打开一个 Codex session，使新安装的 Skill 和 MCP 工具生效。你可以在 Codex CLI 中输入 `/plugins`，检查 `resume-editor` 是否已安装并启用。
+
+安装完成后，Codex 可以：
 
 - 按 `Required / Core / Preferred / Context` 分析 JD，并回到原文核对
 - 建立 `Direct / Transferable / Missing` 证据矩阵，区分已有证据、可迁移证据和缺口
 - 检查简历草稿结构及需要人工确认的数字、归因和强所有权表述
 - 生成可导入网页编辑器的 draft JSON
 
-### 让 Codex 介入修改简历的流程
+### 每次申请岗位的完整流程
 
-1. 先在 `index.html` 里点击 `导入已有 CV`，或手动写好/粘贴基础简历。
-2. 点击右上角 `导出草稿`，保存当前简历 JSON。
-3. 打开 Codex，把目标 JD 和导出的 JSON 草稿一起发给 Codex。
-4. 让 Codex 根据 JD 优化内容，并输出可导入 Resume Editor 的 JSON。
-5. 回到网页编辑器，点击 `导入草稿`，选择 Codex 输出的 JSON。
-6. 检查页面排版，再点击 `导出 PDF`。
+1. 用浏览器打开 `index.html`。
+2. 点击 `导入已有 CV`，选择 PDF、DOCX、TXT 或 Markdown；也可以直接在模板中填写。
+3. 检查提取预览、栏目和事实，确认后点击 `导入并覆盖正文`。
+4. 在网页中完成基础修改，然后点击 `导出草稿`。
+5. 把导出的 JSON 放进仓库根目录，并重命名为 `resume-original.resume.json`。`*.resume.json` 已被 `.gitignore` 排除；保留这份原稿，不要覆盖或强制提交到 Git。
+6. 在仓库根目录运行 `codex`，把目标 JD 和下面的 Prompt 发给 Codex。
+7. Codex 会分析 JD、核对证据，并把优化后的可导入草稿保存为 `resume-tailored.resume.json`。
+8. 先检查 Codex 输出的待确认事实。回答确认问题后，可让 Codex 重新生成 `resume-tailored.resume.json`。
+9. 回到网页，点击 `导入草稿`，选择 `resume-tailored.resume.json`。再次核对姓名、日期、数字、栏目和排版。
+10. 右上角选择 `单页 A4`，调整字号后点击 `导出 PDF`。打印窗口选择 A4、100% 缩放、关闭页眉页脚，并建议开启背景图形。
+
+两个导入按钮的用途不同：
+
+- `导入已有 CV`：读取 PDF、DOCX、TXT 或 Markdown，并识别简历栏目。
+- `导入草稿`：读取 Resume Editor JSON，用于恢复编辑状态或接收 Codex 的优化结果。
 
 ### 推荐复制给 Codex 的 prompt
 
-把下面这段发给 Codex，然后在后面粘贴 JD 和你的草稿 JSON：
+先把 `resume-original.resume.json` 放到仓库根目录，再复制下面的 Prompt 并粘贴 JD：
 
 ```text
-请使用 $resume-editor 和当前仓库里的 Resume Editor 工具处理我的简历。
+请使用 $resume-editor 和当前仓库里的 Resume Editor 工具，根据下面的 JD 优化我的简历。
 
-我会提供：
-1. 目标岗位 JD
-2. 从 index.html 右上角“导出草稿”得到的 Resume Editor JSON
+原始草稿文件：./resume-original.resume.json
 
 请你完成：
 1. 把 JD 要求按 Required / Core / Preferred / Context 分类；每项保留可核对的 JD 原文依据，不要把启发式关键词当成结论。
@@ -153,19 +170,19 @@ codex plugin add resume-editor@resume-tools
 4. 控制在一页 A4 内：先按与 JD 的相关性删减和合并，再压缩措辞；不要用极小字号掩盖内容过多。
 5. 不得编造或强化经历、指标、因果、所有权、公司、学校、证书和技能；不得输出没有依据的“ATS 匹配率”。需要我补充的信息统一写成 [待确认：具体问题]。
 6. 生成 JSON 前调用可用的 schema、validation、claim review 和 import payload 工具；claim review 只用于提示人工核对，不能代替事实判断。
-7. 最后输出：
+7. 不要覆盖 ./resume-original.resume.json。把最终完整、合法、可直接导入 index.html 的 JSON 保存为 ./resume-tailored.resume.json。
+8. 最后在对话中输出：
    A. 修改摘要及最重要的 JD 匹配变化。
-   B. 完整、合法、可直接导入 index.html 的 Resume Editor JSON；JSON 代码块内不要夹杂解释文字。
+   B. 已保存的 JSON 文件路径。
    C. 待确认事实、仍然缺失的 JD 证据和一页排版风险；没有则明确写“无”。
 
 下面是 JD：
 [把 JD 粘贴在这里]
-
-下面是我的 Resume Editor JSON：
-[把导出的 JSON 粘贴在这里]
 ```
 
-如果你已经安装了 Codex plugin，也可以在 prompt 里加一句：
+如果不方便把 JSON 放进仓库，也可以把导出的 JSON 文件直接附加到 Codex 对话，或将内容粘贴在 Prompt 后面，并让 Codex 输出完整 JSON。保存为 `.json` 文件后再使用网页的 `导入草稿`。
+
+如果 Codex 没有自动调用工具，可以追加：
 
 ```text
 如果可用，请调用 resume-editor 的 schema、validation、claim review 和 import payload 工具，确保最终 JSON 可导入网页编辑器，并把需要人工确认的表述单独列出。
