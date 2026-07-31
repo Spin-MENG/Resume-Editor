@@ -124,6 +124,37 @@ assert.match(multiLineEducation.snapshot["education-degrees"], /2015 - 2019/);
 assert.equal(multiLineEducation.snapshot["education-coursework"], "");
 assert.match(Object.values(multiLineEducation.snapshot).join(" "), /Community mentor/);
 
+const letterSpacedHeadings = sandbox.parseCv(`
+JANE DOE
+jane@example.com
+
+P R O F E S S I O N A L P R O F I L E
+Data analyst with retail experience.
+
+P R O F E S S I O N A L E X P E R I E N C E
+Example Company
+Data Analyst | 2023 - Present
+- Built forecasting dashboards.
+
+E D U C AT I O N
+Example University
+MSc Data Science | 2022
+
+R E S E A R C H E X P E R I E N C E
+Forecasting Research
+Researcher | 2021
+- Evaluated time-series models.
+
+S K I L L S & AWA R D
+- SQL, Python, English
+`);
+assert.deepEqual(Array.from(letterSpacedHeadings.recognizedSections), ["简介", "经历", "教育", "项目/研究", "技能/奖项"]);
+assert.equal(letterSpacedHeadings.snapshot["section-profile"], "PROFESSIONAL PROFILE");
+assert.equal(letterSpacedHeadings.snapshot["section-experience"], "PROFESSIONAL EXPERIENCE");
+assert.equal(letterSpacedHeadings.snapshot["section-education"], "EDUCATION");
+assert.equal(letterSpacedHeadings.snapshot["section-research"], "RESEARCH EXPERIENCE");
+assert.equal(letterSpacedHeadings.snapshot["section-skills"], "SKILLS &amp; AWARDS");
+
 const cjkItems = Array.from("工作经历").map((character, index) => ({
   str: character,
   transform: [1, 0, 0, 10, index * 10, 100],

@@ -1674,12 +1674,52 @@
           pattern: /^(?:(?:(?:technical|professional|core)\s+)?(?:skills?|competenc(?:y|ies)|expertise|technologies)|languages|awards?|honou?rs?|certifications?|licenses?|skills?\s*(?:&|and|\/|、)\s*(?:awards?|interests?)|技能|专业技能|核心能力|语言能力|语言|获奖经历|荣誉奖项|证书|资质证书)$/i
         }
       ];
+      const cvCompactSectionDefinitions = [
+        {
+          key: "profile",
+          pattern: /^(?:(?:professional|career|personal)?(?:summary|profile|objective|overview)|aboutme)$/i
+        },
+        {
+          key: "experience",
+          pattern: /^(?:(?:professional|work|employment|career|internship)?(?:experience|history))$/i
+        },
+        {
+          key: "education",
+          pattern: /^(?:education|academic(?:background|history)|qualifications?)$/i
+        },
+        {
+          key: "projects",
+          pattern: /^(?:(?:selected|key|relevant)?(?:projects?|research|publications?|portfolio|casestud(?:y|ies)|projects?research)|projectexperience|researchexperience)$/i
+        },
+        {
+          key: "skills",
+          pattern: /^(?:(?:technical|professional|core)?(?:skills?|competenc(?:y|ies)|expertise|technologies)|languages|awards?|honou?rs?|certifications?|licenses?|skills?(?:and)?(?:awards?|interests?))$/i
+        }
+      ];
+      const cvCanonicalSectionLabels = {
+        profile: "PROFESSIONAL PROFILE",
+        experience: "PROFESSIONAL EXPERIENCE",
+        education: "EDUCATION",
+        projects: "RESEARCH EXPERIENCE",
+        skills: "SKILLS & AWARDS"
+      };
       const cvExtraSectionPattern = /^(?:leadership|volunteer(?:ing)?|community\s+service|activities|memberships?|interests?|additional\s+information|references|领导力|志愿者经历|志愿服务|社会实践|社团经历|校园活动|兴趣爱好|其他信息)$/i;
 
-      function identifyCvSectionHeading(value) {
+      function getCvSectionHeadingMatch(value) {
         const heading = cleanImportedLine(value).replace(/[：:]$/, "").trim();
-        if (!heading || heading.length > 56) return null;
-        return cvSectionDefinitions.find((definition) => definition.pattern.test(heading))?.key || null;
+        if (!heading || heading.length > 80) return null;
+        const directMatch = cvSectionDefinitions.find((definition) => definition.pattern.test(heading));
+        if (directMatch) return { key: directMatch.key, label: heading };
+        const compactHeading = heading
+          .replace(/&/g, "and")
+          .replace(/[^A-Za-z0-9\u3400-\u9fff]+/g, "")
+          .toLowerCase();
+        const compactMatch = cvCompactSectionDefinitions.find((definition) => definition.pattern.test(compactHeading));
+        if (!compactMatch) return null;
+        return {
+          key: compactMatch.key,
+          label: cvCanonicalSectionLabels[compactMatch.key]
+        };
       }
 
       function parseImportedCvLines(text) {
@@ -1712,10 +1752,10 @@
 
         lines.forEach((line) => {
           if (!line.blank && !line.isBullet) {
-            const identified = identifyCvSectionHeading(line.text);
-            if (identified) {
-              currentSection = identified;
-              labels[identified] ||= line.text;
+            const headingMatch = getCvSectionHeadingMatch(line.text);
+            if (headingMatch) {
+              currentSection = headingMatch.key;
+              labels[headingMatch.key] ||= headingMatch.label;
               recognizedHeadings += 1;
               return;
             }
