@@ -1370,6 +1370,7 @@
       let pendingCvFileName = "";
       let cvImportBackup = null;
       let activeCvImportRunId = 0;
+      let activeCvImportStage = "等待选择文件";
       const initialContent = new Map(editables.map((node) => [node.dataset.editId, node.innerHTML]));
       const allowedInlineTags = new Set(["BR", "STRONG", "B", "EM", "I"]);
       const externalLibraryLoads = new Map();
@@ -1398,6 +1399,7 @@
 
       function setCvImportProgress(message, runId = activeCvImportRunId) {
         if (runId !== activeCvImportRunId) return;
+        activeCvImportStage = String(message || "正在处理 CV").replace(/…+$/, "");
         importCvButton.textContent = message;
         setSaveMessage(message);
       }
@@ -1856,8 +1858,9 @@
           setSnapshotValue(snapshot, educationSlot.heading, importedLinesToHtml(educationLines.slice(0, 1)));
           const remainingEducationLines = educationLines.slice(1);
           const courseworkPattern = /^(?:(?:relevant|selected)\s+)?(?:coursework|courses?|modules?)\s*[:：]|^(?:相关|主要|主修|核心)?课程\s*[:：]/i;
+          const lastEducationLine = remainingEducationLines[remainingEducationLines.length - 1] || "";
           const hasCoursework = educationSlot.extra.length
-            && courseworkPattern.test(remainingEducationLines.at(-1) || "");
+            && courseworkPattern.test(lastEducationLine);
           const coursework = hasCoursework ? remainingEducationLines.pop() : "";
           const metaLines = remainingEducationLines;
           setSnapshotValue(snapshot, educationSlot.meta, importedLinesToHtml(metaLines));
@@ -1939,6 +1942,20 @@
         const warningText = analysis.warnings.length ? `；请注意：${analysis.warnings.join("；")}` : "";
         cvImportSummary.textContent = `识别栏目：${sectionText}；正文 ${analysis.sourceLineCount} 行，预计填充 ${analysis.nonEmptyFields} 个字段${warningText}。`;
         return analysis;
+      }
+
+      function openCvImportPreview() {
+        if (cvImportDialog.open) return;
+        try {
+          if (typeof cvImportDialog.showModal === "function") {
+            cvImportDialog.showModal();
+            return;
+          }
+        } catch (error) {
+          console.warn("CV import preview could not open as a modal; using a non-modal fallback.", error);
+        }
+        if (typeof cvImportDialog.show === "function") cvImportDialog.show();
+        else cvImportDialog.setAttribute("open", "");
       }
 
       function loadScriptFromUrl(url, integrity = "") {
@@ -2091,7 +2108,8 @@
               const current = ordered[index];
               const gap = current.x - (previous.x + previous.width);
               const fontSize = Math.max(previous.height, current.height, 1);
-              const leftCharacter = Array.from(previous.text).at(-1) || "";
+              const previousCharacters = Array.from(previous.text);
+              const leftCharacter = previousCharacters[previousCharacters.length - 1] || "";
               const rightCharacter = Array.from(current.text)[0] || "";
               const cjkBoundary = isCjkCharacter(leftCharacter) && isCjkCharacter(rightCharacter);
               const punctuationBoundary = /[（《【“‘]/.test(leftCharacter) || /[，。！？；：、）》】”’.,!?;:]/.test(rightCharacter);
@@ -2130,7 +2148,10 @@
           loadExternalModule("pdfjsModule", pdfModuleCandidates),
           loadExternalModule("pdfjsWorkerModule", pdfWorkerCandidates)
         ]), externalLoadTimeoutMs * 2 + 5000, "library-load-timeout");
-        globalThis.pdfjsWorker = pdfWorkerModule;
+        const workerHandler = pdfWorkerModule?.WorkerMessageHandler;
+        if (typeof pdfjsLib?.getDocument !== "function") throw new Error("pdf-module-invalid");
+        if (typeof workerHandler?.setup !== "function") throw new Error("pdf-worker-invalid");
+        globalThis.pdfjsWorker = { WorkerMessageHandler: workerHandler };
         setCvImportProgress("正在打开 PDF…", runId);
         const loadingTask = pdfjsLib.getDocument({
           data: new Uint8Array(await withTimeout(file.arrayBuffer(), 10000, "read-failed")),
@@ -2207,12 +2228,14 @@
         throw new Error("unsupported-cv-file");
       }
 
-      function getCvImportErrorMessage(error) {
+      function getCvImportErrorMessage(error, stage = activeCvImportStage) {
         const messages = {
           "file-too-large": "文件超过 15 MB，请先压缩或转换为 TXT / Markdown。",
           "too-many-pages": "PDF 超过 30 页，请先保留简历相关页面再导入。",
           "pdf-no-text": "这个 PDF 没有可提取文字，可能是扫描件；请先 OCR，或另存为 DOCX / TXT。",
           "pdf-password": "这个 PDF 受密码保护，请解锁后再导入。",
+          "pdf-module-invalid": "PDF 主解析组件与当前浏览器不兼容，请关闭页面重新打开后重试。",
+          "pdf-worker-invalid": "PDF 辅助解析组件未正确加载，请关闭页面重新打开后重试。",
           "pdf-open-timeout": "PDF 打开超时。请重试，或先另存为新的 PDF / TXT。",
           "pdf-page-timeout": "PDF 页面解析超时，可能包含复杂字体或损坏内容；请先转换为 TXT / DOCX。",
           "docx-no-text": "这个 DOCX 没有提取到足够文字，请另存为 TXT 或 PDF 后重试。",
@@ -2223,7 +2246,14 @@
           "cv-import-timeout": "CV 读取超过 70 秒，已自动停止。请重试或转换为 TXT / Markdown。",
           "read-failed": "文件读取失败，请重新选择文件。"
         };
-        return messages[error?.message] || "无法解析这个 CV。请检查文件格式，或改用 TXT / Markdown。";
+        if (messages[error?.message]) return messages[error.message];
+        if (error?.name === "NotReadableError") return "浏览器无法读取所选文件，请把 PDF 复制到本地普通文件夹后重试。";
+        if (error?.name === "SecurityError") return "Safari 阻止了本地文件读取。请关闭当前页面后重新打开，再选择 PDF。";
+        const diagnostic = `${error?.name || "Error"}: ${error?.message || "unknown"}`
+          .replace(/(?:blob|https?|file):\S+/gi, "[URL]")
+          .replace(/\s+/g, " ")
+          .slice(0, 120);
+        return `无法解析这个 CV（阶段：${stage || "未知"}；${diagnostic}）。`;
       }
 
       async function handleCvSelection(event) {
@@ -2245,12 +2275,14 @@
           pendingCvFileName = file.name;
           cvImportFileName.textContent = `文件：${file.name}`;
           cvImportText.value = extractedText;
+          setCvImportProgress("正在生成导入预览…", runId);
           refreshCvImportSummary();
-          cvImportDialog.showModal();
+          openCvImportPreview();
           setSaveMessage("CV 已读取，请检查导入预览", true);
         } catch (error) {
+          console.error("CV import failed", { stage: activeCvImportStage, name: error?.name, message: error?.message, error });
           setSaveMessage("CV 读取失败", true);
-          showToast(getCvImportErrorMessage(error));
+          showToast(getCvImportErrorMessage(error, activeCvImportStage));
         } finally {
           importCvButton.disabled = false;
           importCvButton.textContent = "导入已有 CV";

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-assert.match(html, /globalThis\.pdfjsWorker\s*=\s*pdfWorkerModule/, "PDF import must use the main-thread worker fallback");
+assert.match(html, /globalThis\.pdfjsWorker\s*=\s*\{\s*WorkerMessageHandler:\s*workerHandler\s*\}/, "PDF import must use the main-thread worker fallback");
 assert.match(html, /const cvImportTimeoutMs\s*=\s*70000/, "CV import must have a global timeout");
 assert.match(html, /"pdf-open-timeout"/, "PDF open timeout must have a user-facing error");
 const start = html.indexOf("      function escapeResumeText");
