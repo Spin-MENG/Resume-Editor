@@ -1369,6 +1369,7 @@
       let suppressPhotoClick = false;
       let pendingCvFileName = "";
       let cvImportBackup = null;
+      let activeCvImportRunId = 0;
       const initialContent = new Map(editables.map((node) => [node.dataset.editId, node.innerHTML]));
       const allowedInlineTags = new Set(["BR", "STRONG", "B", "EM", "I"]);
       const externalLibraryLoads = new Map();
@@ -1377,8 +1378,29 @@
       const maxCvFileBytes = 15 * 1024 * 1024;
       const maxCvTextCharacters = 120000;
       const maxPdfPages = 30;
+      const externalLoadTimeoutMs = 20000;
+      const pdfOpenTimeoutMs = 25000;
+      const pdfPageTimeoutMs = 12000;
+      const cvImportTimeoutMs = 70000;
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+      function withTimeout(promise, timeoutMs, errorCode, onTimeout) {
+        let timer = 0;
+        const timeout = new Promise((_, reject) => {
+          timer = window.setTimeout(() => {
+            try { onTimeout?.(); } catch (error) {}
+            reject(new Error(errorCode));
+          }, timeoutMs);
+        });
+        return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
+      }
+
+      function setCvImportProgress(message, runId = activeCvImportRunId) {
+        if (runId !== activeCvImportRunId) return;
+        importCvButton.textContent = message;
+        setSaveMessage(message);
+      }
 
       function showToast(message) {
         const toast = document.createElement("div");
@@ -1922,12 +1944,20 @@
       function loadScriptFromUrl(url, integrity = "") {
         return new Promise((resolve, reject) => {
           const script = document.createElement("script");
+          const timer = window.setTimeout(() => {
+            script.remove();
+            reject(new Error("library-load-timeout"));
+          }, externalLoadTimeoutMs);
           script.src = url;
           script.async = true;
           script.crossOrigin = "anonymous";
           if (integrity) script.integrity = integrity;
-          script.onload = () => resolve();
+          script.onload = () => {
+            window.clearTimeout(timer);
+            resolve();
+          };
           script.onerror = () => {
+            window.clearTimeout(timer);
             script.remove();
             reject(new Error("library-load-failed"));
           };
@@ -1973,18 +2003,22 @@
         if (!window.crypto?.subtle || !candidate?.integrity?.startsWith("sha384-")) {
           throw new Error("integrity-unavailable");
         }
-        const response = await fetch(candidate.url, {
-          mode: "cors",
-          credentials: "omit",
-          cache: "force-cache",
-          referrerPolicy: "no-referrer"
-        });
-        if (!response.ok) throw new Error("library-load-failed");
-        const bytes = await response.arrayBuffer();
-        const digest = await window.crypto.subtle.digest("SHA-384", bytes);
-        const actualIntegrity = `sha384-${digestBytesToBase64(digest)}`;
-        if (actualIntegrity !== candidate.integrity) throw new Error("integrity-mismatch");
-        return { bytes, sourceUrl: candidate.url };
+        const controller = new AbortController();
+        return withTimeout((async () => {
+          const response = await fetch(candidate.url, {
+            mode: "cors",
+            credentials: "omit",
+            cache: "force-cache",
+            referrerPolicy: "no-referrer",
+            signal: controller.signal
+          });
+          if (!response.ok) throw new Error("library-load-failed");
+          const bytes = await response.arrayBuffer();
+          const digest = await window.crypto.subtle.digest("SHA-384", bytes);
+          const actualIntegrity = `sha384-${digestBytesToBase64(digest)}`;
+          if (actualIntegrity !== candidate.integrity) throw new Error("integrity-mismatch");
+          return { bytes, sourceUrl: candidate.url };
+        })(), externalLoadTimeoutMs, "library-load-timeout", () => controller.abort());
       }
 
       async function loadExternalModule(cacheKey, urls) {
@@ -1995,37 +2029,16 @@
               try {
                 const asset = await fetchVerifiedAsset(candidate);
                 objectUrl = URL.createObjectURL(new Blob([asset.bytes], { type: "text/javascript" }));
-                const module = await import(objectUrl);
+                const module = await withTimeout(
+                  import(objectUrl),
+                  externalLoadTimeoutMs,
+                  "library-load-timeout"
+                );
                 externalLibrarySources.set(cacheKey, asset.sourceUrl);
                 externalLibraryObjectUrls.set(cacheKey, objectUrl);
                 return module;
               } catch (error) {
                 if (objectUrl) URL.revokeObjectURL(objectUrl);
-                // Try the next pinned CDN URL.
-              }
-            }
-            throw new Error("library-unavailable");
-          })());
-        }
-        try {
-          return await externalLibraryLoads.get(cacheKey);
-        } catch (error) {
-          externalLibraryLoads.delete(cacheKey);
-          throw error;
-        }
-      }
-
-      async function loadVerifiedBlobUrl(cacheKey, urls) {
-        if (!externalLibraryLoads.has(cacheKey)) {
-          externalLibraryLoads.set(cacheKey, (async () => {
-            for (const candidate of urls) {
-              try {
-                const asset = await fetchVerifiedAsset(candidate);
-                const objectUrl = URL.createObjectURL(new Blob([asset.bytes], { type: "text/javascript" }));
-                externalLibrarySources.set(cacheKey, asset.sourceUrl);
-                externalLibraryObjectUrls.set(cacheKey, objectUrl);
-                return objectUrl;
-              } catch (error) {
                 // Try the next pinned CDN URL.
               }
             }
@@ -2091,8 +2104,9 @@
           .filter(Boolean);
       }
 
-      async function extractTextFromPdf(file) {
-        const pdfjsLib = await loadExternalModule("pdfjsModule", [
+      async function extractTextFromPdf(file, runId) {
+        setCvImportProgress("正在加载 PDF 组件…", runId);
+        const pdfModuleCandidates = [
           {
             url: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/legacy/build/pdf.mjs",
             integrity: "sha384-OQt+efCOZxfeU2OgAua9T0l4CcJ8pIHyyZVWqgxYoZtVB3JlW6ISImRvZX64aA8G"
@@ -2101,8 +2115,8 @@
             url: "https://unpkg.com/pdfjs-dist@5.7.284/legacy/build/pdf.mjs",
             integrity: "sha384-OQt+efCOZxfeU2OgAua9T0l4CcJ8pIHyyZVWqgxYoZtVB3JlW6ISImRvZX64aA8G"
           }
-        ]);
-        pdfjsLib.GlobalWorkerOptions.workerSrc = await loadVerifiedBlobUrl("pdfjsWorker", [
+        ];
+        const pdfWorkerCandidates = [
           {
             url: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/legacy/build/pdf.worker.mjs",
             integrity: "sha384-GMc+SUTqnzhviTLSPW4wTrbWKRrUBU1kpj3ekS4hFOOlLCteM3iukPmmBJQ/fmJZ"
@@ -2111,20 +2125,38 @@
             url: "https://unpkg.com/pdfjs-dist@5.7.284/legacy/build/pdf.worker.mjs",
             integrity: "sha384-GMc+SUTqnzhviTLSPW4wTrbWKRrUBU1kpj3ekS4hFOOlLCteM3iukPmmBJQ/fmJZ"
           }
-        ]);
+        ];
+        const [pdfjsLib, pdfWorkerModule] = await withTimeout(Promise.all([
+          loadExternalModule("pdfjsModule", pdfModuleCandidates),
+          loadExternalModule("pdfjsWorkerModule", pdfWorkerCandidates)
+        ]), externalLoadTimeoutMs * 2 + 5000, "library-load-timeout");
+        globalThis.pdfjsWorker = pdfWorkerModule;
+        setCvImportProgress("正在打开 PDF…", runId);
         const loadingTask = pdfjsLib.getDocument({
-          data: new Uint8Array(await file.arrayBuffer()),
+          data: new Uint8Array(await withTimeout(file.arrayBuffer(), 10000, "read-failed")),
           isEvalSupported: false
         });
         let pdf;
         try {
-          pdf = await loadingTask.promise;
+          pdf = await withTimeout(
+            loadingTask.promise,
+            pdfOpenTimeoutMs,
+            "pdf-open-timeout",
+            () => loadingTask.destroy()
+          );
           if (pdf.numPages > maxPdfPages) throw new Error("too-many-pages");
           const pages = [];
           for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-            const page = await pdf.getPage(pageNumber);
-            const content = await page.getTextContent({ normalizeWhitespace: true });
+            setCvImportProgress(`正在解析 PDF ${pageNumber}/${pdf.numPages}…`, runId);
+            const page = await withTimeout(pdf.getPage(pageNumber), pdfPageTimeoutMs, "pdf-page-timeout");
+            const content = await withTimeout(
+              page.getTextContent({ normalizeWhitespace: true }),
+              pdfPageTimeoutMs,
+              "pdf-page-timeout",
+              () => page.cleanup()
+            );
             pages.push(pdfItemsToLines(content.items).join("\n"));
+            page.cleanup();
             if (pages.join("\n").length > maxCvTextCharacters) break;
           }
           const textValue = pages.join("\n\n").slice(0, maxCvTextCharacters);
@@ -2134,12 +2166,13 @@
           if (/password/i.test(error?.name || "") || /password/i.test(error?.message || "")) throw new Error("pdf-password");
           throw error;
         } finally {
-          try { await pdf?.destroy(); } catch (error) {}
+          try { await loadingTask.destroy(); } catch (error) {}
         }
       }
 
-      async function extractTextFromDocx(file) {
-        const mammoth = await loadExternalLibrary("mammoth", [
+      async function extractTextFromDocx(file, runId) {
+        setCvImportProgress("正在加载 Word 组件…", runId);
+        const mammoth = await withTimeout(loadExternalLibrary("mammoth", [
           {
             url: "https://cdn.jsdelivr.net/npm/mammoth@1.10.0/mammoth.browser.min.js",
             integrity: "sha384-uvBxVufq+yj4tHg73GHHpkfd2ShoR6nNqE4Ckhwt3jYVm79X4TMRo1VhN5EejJGy"
@@ -2148,22 +2181,28 @@
             url: "https://unpkg.com/mammoth@1.10.0/mammoth.browser.min.js",
             integrity: "sha384-uvBxVufq+yj4tHg73GHHpkfd2ShoR6nNqE4Ckhwt3jYVm79X4TMRo1VhN5EejJGy"
           }
-        ]);
-        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        ]), externalLoadTimeoutMs * 2 + 5000, "library-load-timeout");
+        setCvImportProgress("正在解析 Word…", runId);
+        const result = await withTimeout(
+          mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() }),
+          pdfOpenTimeoutMs,
+          "docx-parse-timeout"
+        );
         const textValue = String(result?.value || "").slice(0, maxCvTextCharacters);
         if (textValue.replace(/\s/g, "").length < 40) throw new Error("docx-no-text");
         return textValue;
       }
 
-      async function extractTextFromCvFile(file) {
+      async function extractTextFromCvFile(file, runId) {
         if (file.size > maxCvFileBytes) throw new Error("file-too-large");
         const extension = file.name.split(".").pop()?.toLowerCase() || "";
         if (["txt", "md", "markdown"].includes(extension)) {
+          setCvImportProgress("正在读取文本…", runId);
           return (await readTextFile(file)).slice(0, maxCvTextCharacters);
         }
-        if (extension === "pdf" || file.type === "application/pdf") return extractTextFromPdf(file);
+        if (extension === "pdf" || file.type === "application/pdf") return extractTextFromPdf(file, runId);
         if (extension === "docx" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-          return extractTextFromDocx(file);
+          return extractTextFromDocx(file, runId);
         }
         throw new Error("unsupported-cv-file");
       }
@@ -2174,9 +2213,14 @@
           "too-many-pages": "PDF 超过 30 页，请先保留简历相关页面再导入。",
           "pdf-no-text": "这个 PDF 没有可提取文字，可能是扫描件；请先 OCR，或另存为 DOCX / TXT。",
           "pdf-password": "这个 PDF 受密码保护，请解锁后再导入。",
+          "pdf-open-timeout": "PDF 打开超时。请重试，或先另存为新的 PDF / TXT。",
+          "pdf-page-timeout": "PDF 页面解析超时，可能包含复杂字体或损坏内容；请先转换为 TXT / DOCX。",
           "docx-no-text": "这个 DOCX 没有提取到足够文字，请另存为 TXT 或 PDF 后重试。",
+          "docx-parse-timeout": "DOCX 解析超时，请先另存为 TXT 后重试。",
           "unsupported-cv-file": "暂时支持 PDF、DOCX、TXT 和 Markdown；旧版 .doc 请先另存为 .docx。",
           "library-unavailable": "读取 PDF / DOCX 所需的解析组件未能加载，请联网后重试，或改用 TXT / Markdown。",
+          "library-load-timeout": "解析组件加载超时，请检查网络后重试；也可以先转换为 TXT / Markdown。",
+          "cv-import-timeout": "CV 读取超过 70 秒，已自动停止。请重试或转换为 TXT / Markdown。",
           "read-failed": "文件读取失败，请重新选择文件。"
         };
         return messages[error?.message] || "无法解析这个 CV。请检查文件格式，或改用 TXT / Markdown。";
@@ -2185,11 +2229,18 @@
       async function handleCvSelection(event) {
         const file = event.target.files?.[0];
         if (!file) return;
+        const runId = ++activeCvImportRunId;
         importCvButton.disabled = true;
-        importCvButton.textContent = "正在读取…";
-        setSaveMessage("正在本地解析 CV…");
+        setCvImportProgress("正在读取 CV…", runId);
         try {
-          const extractedText = await extractTextFromCvFile(file);
+          const extractedText = await withTimeout(
+            extractTextFromCvFile(file, runId),
+            cvImportTimeoutMs,
+            "cv-import-timeout",
+            () => {
+              if (runId === activeCvImportRunId) activeCvImportRunId += 1;
+            }
+          );
           if (extractedText.replace(/\s/g, "").length < 40) throw new Error("read-failed");
           pendingCvFileName = file.name;
           cvImportFileName.textContent = `文件：${file.name}`;
