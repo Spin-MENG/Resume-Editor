@@ -92,6 +92,50 @@ codex plugin add resume-editor@resume-tools
 - 检查简历草稿结构
 - 生成可导入网页编辑器的 draft JSON
 
+### 让 Codex 介入修改简历的流程
+
+1. 先在 `index.html` 里写好或粘贴你的基础简历。
+2. 点击右上角 `导出草稿`，保存当前简历 JSON。
+3. 打开 Codex，把目标 JD 和导出的 JSON 草稿一起发给 Codex。
+4. 让 Codex 根据 JD 优化内容，并输出可导入 Resume Editor 的 JSON。
+5. 回到网页编辑器，点击 `导入草稿`，选择 Codex 输出的 JSON。
+6. 检查页面排版，再点击 `导出 PDF`。
+
+### 推荐复制给 Codex 的 prompt
+
+把下面这段发给 Codex，然后在后面粘贴 JD 和你的草稿 JSON：
+
+```text
+你是我的简历优化助手。请使用当前仓库里的 resume-editor 工具来处理我的简历。
+
+我会提供：
+1. 目标岗位 JD
+2. 从 index.html 右上角“导出草稿”得到的 Resume Editor JSON
+
+请你完成：
+1. 先提取 JD 中最重要的岗位职责、硬技能、软技能、关键词和筛选标准。
+2. 对照我的简历草稿，指出最需要增强的 3-5 个匹配点。
+3. 直接改写简历内容，让它更匹配这个 JD。
+4. 每条经历 bullet 尽量使用“动作 + 方法/工具 + 结果”的结构。
+5. 控制在一页 A4 内，优先保留与 JD 最相关的内容。
+6. 不要编造经历、公司、学校、证书或无法证明的数据。如果需要量化但原文没有数据，请用 [补充具体数字] 标记。
+7. 最后输出两部分：
+   A. 修改摘要：说明你改了什么、为什么改。
+   B. 可导入 Resume Editor 的 JSON：必须是完整、合法、可直接导入 index.html 的 JSON，不要夹杂解释文字。
+
+下面是 JD：
+[把 JD 粘贴在这里]
+
+下面是我的 Resume Editor JSON：
+[把导出的 JSON 粘贴在这里]
+```
+
+如果你已经安装了 Codex plugin，也可以在 prompt 里加一句：
+
+```text
+如果可用，请调用 resume-editor 的 schema、validation 和 import payload 工具，确保最终 JSON 可以直接导入网页编辑器。
+```
+
 ## 本地启动 MCP HTTP 服务
 
 如果你要做 ChatGPT Developer Mode 或远程 MCP 连接调试，可以先在本地启动：
