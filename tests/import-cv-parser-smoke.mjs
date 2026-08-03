@@ -6,6 +6,13 @@ const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 assert.match(html, /globalThis\.pdfjsWorker\s*=\s*\{\s*WorkerMessageHandler:\s*workerHandler\s*\}/, "PDF import must use the main-thread worker fallback");
 assert.match(html, /const cvImportTimeoutMs\s*=\s*70000/, "CV import must have a global timeout");
 assert.match(html, /"pdf-open-timeout"/, "PDF open timeout must have a user-facing error");
+assert.match(html, /id="templateStyle"/, "Template selector must exist");
+for (const templateStyle of ["classic", "modern", "executive", "analyst"]) {
+  assert.match(html, new RegExp(`value="${templateStyle}"`), `Missing resume template option ${templateStyle}`);
+  assert.match(html, new RegExp(`resume-template-${templateStyle}`), `Missing resume template CSS class ${templateStyle}`);
+}
+assert.match(html, /function applyTemplateStyle/, "Template style application function must exist");
+assert.match(html, /templateStyle:\s*templateStyle\.value/, "Draft export must preserve the selected template");
 for (const optionalFieldId of ["exp-current-5", "exp-previous-2", "exp-previous-3", "project-one-2", "project-two-2"]) {
   assert.match(html, new RegExp(`data-edit-id="${optionalFieldId}"><\\/li>`), `Missing empty optional field ${optionalFieldId}`);
 }

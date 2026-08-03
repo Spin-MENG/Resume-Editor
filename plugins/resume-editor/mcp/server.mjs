@@ -85,6 +85,8 @@ const defaultContent = {
   "skill-5": "<strong>Awards / Certifications:</strong> Award, certification, license, or notable recognition"
 };
 
+const templateStyles = ["classic", "modern", "executive", "analyst"];
+
 const tools = [
   {
     name: "get_resume_draft_schema",
@@ -114,6 +116,7 @@ const tools = [
       type: "object",
       additionalProperties: false,
       properties: {
+        templateStyle: { type: "string", enum: templateStyles },
         fontScale: { type: "number", minimum: 90, maximum: 115 },
         printMode: { type: "string", enum: ["single", "auto"] }
       }
@@ -225,6 +228,7 @@ const tools = [
           type: "object",
           description: "Field content keyed by Resume Editor field id."
         },
+        templateStyle: { type: "string", enum: templateStyles },
         fontScale: { type: "number", minimum: 90, maximum: 115 },
         printMode: { type: "string", enum: ["single", "auto"] }
       },
@@ -307,6 +311,7 @@ function buildDraft(content, settings = {}) {
     exportedAt: new Date().toISOString(),
     content: normalizedContent,
     settings: {
+      templateStyle: templateStyles.includes(settings.templateStyle) ? settings.templateStyle : "classic",
       printMode: settings.printMode === "auto" ? "auto" : "single",
       fontScale: clamp(settings.fontScale ?? 100, 90, 115)
     }
@@ -389,8 +394,13 @@ const handlers = {
         schemaVersion: 1,
         exportedAt: "ISO timestamp",
         content: "object keyed by field id",
-        settings: { printMode: "single | auto", fontScale: "90-115" }
+        settings: {
+          templateStyle: "classic | modern | executive | analyst",
+          printMode: "single | auto",
+          fontScale: "90-115"
+        }
       },
+      templateStyles,
       allowedInlineHtml: [...allowedTags],
       fields
     });
@@ -437,7 +447,7 @@ async function handleRequest(message) {
         result: {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
-          serverInfo: { name: "resume-editor", version: "0.3.0" },
+          serverInfo: { name: "resume-editor", version: "0.3.1" },
           instructions: "Use these tools to develop complete, evidence-based Resume Editor content before one-page prioritization, extract candidate JD signals, flag claims that require verification, and package importable JSON. Do not invent resume facts or present a simulated ATS score."
         }
       };

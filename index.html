@@ -116,6 +116,7 @@
       flex: 0 0 auto;
     }
 
+    .template-control,
     .print-mode-control {
       min-height: 36px;
       padding: 0 5px 0 10px;
@@ -131,6 +132,7 @@
       white-space: nowrap;
     }
 
+    .template-control select,
     .print-mode-control select {
       min-height: 28px;
       padding: 0 22px 0 7px;
@@ -377,6 +379,128 @@
         0 16px 46px rgba(20, 25, 30, 0.14);
       print-color-adjust: exact;
       -webkit-print-color-adjust: exact;
+    }
+
+    body.resume-template-classic {
+      --accent: #8a5a2b;
+      --accent-soft: #f7efe6;
+      --focus: #bf7b36;
+      --line: #c9cfd4;
+    }
+
+    body.resume-template-modern {
+      --accent: #256d85;
+      --accent-soft: #e9f4f6;
+      --focus: #256d85;
+      --line: #b8cbd1;
+    }
+
+    body.resume-template-modern .resume-header {
+      border-bottom-color: var(--accent);
+    }
+
+    body.resume-template-modern .resume-name,
+    body.resume-template-modern .item-heading {
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Noto Sans", sans-serif;
+      letter-spacing: 0;
+    }
+
+    body.resume-template-modern .resume-name {
+      font-size: 2.62em;
+      font-weight: 820;
+      line-height: 1;
+    }
+
+    body.resume-template-modern .item-heading {
+      font-size: 1.02em;
+      font-weight: 780;
+    }
+
+    body.resume-template-modern .section-title {
+      color: #164a58;
+      letter-spacing: 0.105em;
+      border-bottom-color: var(--line);
+    }
+
+    body.resume-template-executive {
+      --accent: #6e4933;
+      --accent-soft: #f5eee9;
+      --focus: #9b6645;
+      --line: #beb2aa;
+    }
+
+    body.resume-template-executive .resume-header {
+      border-bottom-width: 0.42mm;
+      border-bottom-color: #1b1d20;
+    }
+
+    body.resume-template-executive .resume-name {
+      font-size: 2.94em;
+      letter-spacing: 0.015em;
+    }
+
+    body.resume-template-executive .resume-headline {
+      color: #3e332d;
+    }
+
+    body.resume-template-executive .section-title {
+      color: #3a2f29;
+      font-family: Georgia, "Times New Roman", serif;
+      letter-spacing: 0.095em;
+      border-bottom-color: var(--line);
+    }
+
+    body.resume-template-executive .item-heading {
+      color: #191817;
+    }
+
+    body.resume-template-analyst {
+      --accent: #355f4a;
+      --accent-soft: #edf5f0;
+      --focus: #3d7459;
+      --line: #b9c7bd;
+    }
+
+    body.resume-template-analyst .resume-header {
+      border-bottom-color: var(--accent);
+    }
+
+    body.resume-template-analyst .resume-name,
+    body.resume-template-analyst .item-heading {
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Noto Sans", sans-serif;
+      letter-spacing: 0;
+    }
+
+    body.resume-template-analyst .resume-name {
+      font-size: 2.7em;
+      font-weight: 830;
+    }
+
+    body.resume-template-analyst .section-title {
+      display: flex;
+      align-items: center;
+      gap: 1.8mm;
+      padding-bottom: 0.7mm;
+      border-bottom-color: var(--line);
+      color: #284636;
+      letter-spacing: 0.1em;
+    }
+
+    body.resume-template-analyst .section-title::before {
+      width: 3.2mm;
+      height: 0.36em;
+      flex: 0 0 auto;
+      background: var(--accent);
+      content: "";
+    }
+
+    body.resume-template-analyst .resume-body {
+      gap: 1.85mm;
+    }
+
+    body.resume-template-analyst .item-heading {
+      font-size: 1.02em;
+      font-weight: 800;
     }
 
     .resume-document {
@@ -872,6 +996,7 @@
         margin-right: auto;
       }
 
+      .template-control,
       .print-mode-control {
         margin-left: auto;
       }
@@ -897,6 +1022,7 @@
         display: none;
       }
 
+      .template-control,
       .print-mode-control {
         margin-left: 0;
       }
@@ -1135,7 +1261,7 @@
 
   </style>
 </head>
-<body class="print-mode-single">
+<body class="print-mode-single resume-template-classic">
   <header class="editor-bar" aria-label="简历编辑工具栏">
     <div class="editor-bar__inner">
       <div class="editor-brand">
@@ -1144,6 +1270,15 @@
       </div>
       <div class="editor-actions">
         <span class="status-chip" id="pageStatus">A4 · 检查中</span>
+        <label class="template-control" for="templateStyle">
+          <span>模板</span>
+          <select id="templateStyle" aria-label="选择简历视觉模板">
+            <option value="classic" selected>经典紧凑</option>
+            <option value="modern">现代清爽</option>
+            <option value="executive">商务稳重</option>
+            <option value="analyst">分析师重点</option>
+          </select>
+        </label>
         <label class="print-mode-control" for="printMode">
           <span>PDF 长度</span>
           <select id="printMode" aria-label="选择 PDF 导出长度">
@@ -1160,7 +1295,7 @@
         <button class="toolbar-button" id="undoCvImportButton" type="button" hidden>撤销导入</button>
         <button class="toolbar-button" id="importDraftButton" type="button">导入草稿</button>
         <button class="toolbar-button" id="exportDraftButton" type="button">导出草稿</button>
-        <button class="toolbar-button" id="resetButton" type="button">恢复模板</button>
+        <button class="toolbar-button" id="resetButton" type="button">恢复内容</button>
         <button class="toolbar-button toolbar-button--primary" id="exportButton" type="button" title="打开系统打印窗口并另存为 PDF">导出 PDF</button>
         <input id="cvInput" type="file" accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" hidden>
         <input id="draftInput" type="file" accept="application/json,.json" hidden>
@@ -1327,6 +1462,7 @@
       const cvImportBackupStorageKey = `${storagePrefix}:pre-cv-import`;
       const printModeStorageKey = "public-resume-editor:print-mode";
       const fontScaleStorageKey = "public-resume-editor:font-scale";
+      const templateStyleStorageKey = "public-resume-editor:template-style";
       const baseResumeFontPt = 8.05;
 
       const resumePaper = document.getElementById("resumePaper");
@@ -1334,6 +1470,7 @@
       const resumeHeader = document.getElementById("resumeHeader");
       const saveStatus = document.getElementById("saveStatus");
       const pageStatus = document.getElementById("pageStatus");
+      const templateStyle = document.getElementById("templateStyle");
       const printMode = document.getElementById("printMode");
       const fontScale = document.getElementById("fontScale");
       const fontScaleValue = document.getElementById("fontScaleValue");
@@ -1388,6 +1525,7 @@
       const pdfOpenTimeoutMs = 25000;
       const pdfPageTimeoutMs = 12000;
       const cvImportTimeoutMs = 70000;
+      const templateStyleOptions = new Set(["classic", "modern", "executive", "analyst"]);
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -1502,6 +1640,7 @@
           exportedAt: new Date().toISOString(),
           content: getContentSnapshot(),
           settings: {
+            templateStyle: templateStyle.value,
             printMode: printMode.value,
             fontScale: Number(fontScale.value) || 100
           }
@@ -1537,6 +1676,7 @@
         cvImportBackup = {
           content: getContentSnapshot(),
           settings: {
+            templateStyle: templateStyle.value,
             printMode: printMode.value,
             fontScale: Number(fontScale.value) || 100
           }
@@ -1565,6 +1705,10 @@
         const confirmed = window.confirm("撤销导入会恢复导入前的正文，并丢弃导入后的修改。确认继续吗？");
         if (!confirmed) return;
         applyContentSnapshot(backup.content);
+        if (backup.settings?.templateStyle) {
+          const style = applyTemplateStyle(backup.settings.templateStyle);
+          try { localStorage.setItem(templateStyleStorageKey, style); } catch (error) {}
+        }
         if (backup.settings?.printMode) {
           const mode = applyPrintMode(backup.settings.printMode);
           try { localStorage.setItem(printModeStorageKey, mode); } catch (error) {}
@@ -2414,6 +2558,10 @@
           if (!appliedCount) throw new Error("invalid-draft");
           clearCvImportBackup();
           syncEmptyResumeSections();
+          if (parsed?.settings?.templateStyle) {
+            const style = applyTemplateStyle(parsed.settings.templateStyle);
+            try { localStorage.setItem(templateStyleStorageKey, style); } catch (error) {}
+          }
           if (parsed?.settings?.printMode) {
             const mode = applyPrintMode(parsed.settings.printMode);
             try { localStorage.setItem(printModeStorageKey, mode); } catch (error) {}
@@ -2441,6 +2589,23 @@
         const targetHeight = resumePaper.clientWidth * (297 / 210);
         const actualHeight = resumePaper.getBoundingClientRect().height;
         return actualHeight > targetHeight + 3;
+      }
+
+      function applyTemplateStyle(style = templateStyle.value) {
+        const normalizedStyle = templateStyleOptions.has(style) ? style : "classic";
+        templateStyle.value = normalizedStyle;
+        templateStyleOptions.forEach((option) => {
+          document.body.classList.toggle(`resume-template-${option}`, option === normalizedStyle);
+        });
+        return normalizedStyle;
+      }
+
+      function restoreTemplateStyle() {
+        try {
+          applyTemplateStyle(localStorage.getItem(templateStyleStorageKey) || "classic");
+        } catch (error) {
+          applyTemplateStyle("classic");
+        }
       }
 
       function applyPrintMode(mode = printMode.value) {
@@ -2720,7 +2885,7 @@
       });
 
       resetButton.addEventListener("click", () => {
-        const confirmed = window.confirm("确定恢复默认模板吗？当前浏览器中的正文编辑记录会被清除。");
+        const confirmed = window.confirm("确定恢复默认内容吗？当前浏览器中的正文编辑记录会被清除，当前模板样式会保留。");
         if (!confirmed) return;
         editables.forEach((node) => {
           node.innerHTML = initialContent.get(node.dataset.editId) || "";
@@ -2728,9 +2893,9 @@
         syncEmptyResumeSections();
         localStorage.removeItem(contentStorageKey);
         clearCvImportBackup();
-        setSaveMessage("已恢复模板", true);
+        setSaveMessage("已恢复内容", true);
         queuePageCheck();
-        showToast("正文已恢复为默认模板。");
+        showToast("正文已恢复为默认内容。");
       });
 
       exportButton.addEventListener("click", () => {
@@ -2742,6 +2907,17 @@
         }
         document.title = "Resume";
         window.requestAnimationFrame(() => window.print());
+      });
+
+      templateStyle.addEventListener("change", () => {
+        const style = applyTemplateStyle();
+        try {
+          localStorage.setItem(templateStyleStorageKey, style);
+        } catch (error) {
+          // The selected template still applies for the current session.
+        }
+        queuePageCheck();
+        setSaveMessage("已切换模板", true);
       });
 
       printMode.addEventListener("change", () => {
@@ -2864,6 +3040,7 @@
       photoImage.addEventListener("load", renderPhoto);
       restoreSavedContent();
       restorePhotoState();
+      restoreTemplateStyle();
       restorePrintMode();
       restoreFontScale();
       syncPhotoUI();

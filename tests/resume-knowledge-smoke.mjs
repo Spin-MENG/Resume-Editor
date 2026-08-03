@@ -45,6 +45,8 @@ const schemaFieldIds = schemaResponse.result.structuredContent.fields.map((field
 for (const fieldId of ["exp-current-5", "exp-previous-2", "exp-previous-3", "project-one-2", "project-two-2"]) {
   assert.ok(schemaFieldIds.includes(fieldId), `MCP schema is missing ${fieldId}`);
 }
+assert.deepEqual(schemaResponse.result.structuredContent.templateStyles, ["classic", "modern", "executive", "analyst"]);
+assert.equal(schemaResponse.result.structuredContent.importShape.settings.templateStyle, "classic | modern | executive | analyst");
 
 const denseContent = Object.fromEntries([
   "exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4",
@@ -99,6 +101,26 @@ const mcpResponse = await handleRequest({
 });
 assert.equal(mcpResponse.result.structuredContent.sourceCompared, true);
 assert.ok(mcpResponse.result.structuredContent.findings.some((finding) => finding.type === "percentage"));
+
+const payloadResponse = await handleRequest({
+  jsonrpc: "2.0",
+  id: 1.5,
+  method: "tools/call",
+  params: {
+    name: "build_resume_import_payload",
+    arguments: { content: { name: "Jane Doe" }, templateStyle: "modern", fontScale: 104, printMode: "single" }
+  }
+});
+assert.equal(payloadResponse.result.structuredContent.draft.settings.templateStyle, "modern");
+assert.equal(payloadResponse.result.structuredContent.draft.settings.fontScale, 104);
+
+const initializeResponse = await handleRequest({
+  jsonrpc: "2.0",
+  id: 1.75,
+  method: "initialize",
+  params: {}
+});
+assert.equal(initializeResponse.result.serverInfo.version, "0.3.1");
 
 const chineseJdResponse = await handleRequest({
   jsonrpc: "2.0",
