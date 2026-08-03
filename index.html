@@ -395,6 +395,51 @@
       --line: #b8cbd1;
     }
 
+    body.resume-template-modern .resume-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 49mm;
+      align-content: start;
+      gap: 2.15mm 5mm;
+    }
+
+    body.resume-template-modern .resume-section {
+      min-width: 0;
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="profile-title"] {
+      grid-column: 1 / -1;
+      order: 1;
+      padding: 2mm 2.4mm;
+      border: 0.2mm solid #d6e4e8;
+      border-left: 1mm solid var(--accent);
+      background: #f7fbfc;
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="experience-title"] {
+      grid-column: 1;
+      order: 2;
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="research-title"] {
+      grid-column: 1;
+      order: 3;
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="education-title"],
+    body.resume-template-modern .resume-section[aria-labelledby="skills-title"] {
+      grid-column: 2;
+      padding-left: 3mm;
+      border-left: 0.25mm solid var(--line);
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="education-title"] {
+      order: 2;
+    }
+
+    body.resume-template-modern .resume-section[aria-labelledby="skills-title"] {
+      order: 3;
+    }
+
     body.resume-template-modern .resume-header {
       border-bottom-color: var(--accent);
     }
@@ -422,11 +467,58 @@
       border-bottom-color: var(--line);
     }
 
+    body.resume-template-modern .skill-list {
+      padding-left: 0;
+      list-style: none;
+    }
+
+    body.resume-template-modern .skill-list li {
+      padding-left: 0;
+    }
+
     body.resume-template-executive {
       --accent: #6e4933;
       --accent-soft: #f5eee9;
       --focus: #9b6645;
       --line: #beb2aa;
+    }
+
+    body.resume-template-executive .resume-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-content: start;
+      gap: 2.15mm 5mm;
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="profile-title"],
+    body.resume-template-executive .resume-section[aria-labelledby="experience-title"],
+    body.resume-template-executive .resume-section[aria-labelledby="research-title"] {
+      grid-column: 1 / -1;
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="profile-title"] {
+      order: 1;
+      padding: 1.8mm 0;
+      border-top: 0.25mm solid var(--line);
+      border-bottom: 0.25mm solid var(--line);
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="experience-title"] {
+      order: 2;
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="research-title"] {
+      order: 3;
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="education-title"] {
+      grid-column: 1;
+      order: 4;
+    }
+
+    body.resume-template-executive .resume-section[aria-labelledby="skills-title"] {
+      grid-column: 2;
+      order: 4;
     }
 
     body.resume-template-executive .resume-header {
@@ -454,11 +546,62 @@
       color: #191817;
     }
 
+    body.resume-template-executive .skill-list {
+      padding-left: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75mm;
+      list-style: none;
+    }
+
+    body.resume-template-executive .skill-list li {
+      margin-top: 0;
+      padding-left: 0;
+    }
+
     body.resume-template-analyst {
       --accent: #355f4a;
       --accent-soft: #edf5f0;
       --focus: #3d7459;
       --line: #b9c7bd;
+    }
+
+    body.resume-template-analyst .resume-body {
+      display: grid;
+      grid-template-columns: 43mm minmax(0, 1fr);
+      align-content: start;
+      gap: 2mm 5mm;
+    }
+
+    body.resume-template-analyst .resume-section {
+      min-width: 0;
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="profile-title"] {
+      grid-column: 1 / -1;
+      order: 1;
+      padding-bottom: 1.4mm;
+      border-bottom: 0.25mm solid var(--line);
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="skills-title"] {
+      grid-column: 1;
+      order: 2;
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="education-title"] {
+      grid-column: 1;
+      order: 3;
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="experience-title"] {
+      grid-column: 2;
+      order: 2;
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="research-title"] {
+      grid-column: 2;
+      order: 3;
     }
 
     body.resume-template-analyst .resume-header {
@@ -494,13 +637,42 @@
       content: "";
     }
 
-    body.resume-template-analyst .resume-body {
-      gap: 1.85mm;
-    }
-
     body.resume-template-analyst .item-heading {
       font-size: 1.02em;
       font-weight: 800;
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="experience-title"] .resume-item,
+    body.resume-template-analyst .resume-section[aria-labelledby="research-title"] .resume-item {
+      position: relative;
+      padding-left: 4mm;
+      border-left: 0.25mm solid var(--line);
+    }
+
+    body.resume-template-analyst .resume-section[aria-labelledby="experience-title"] .resume-item::before,
+    body.resume-template-analyst .resume-section[aria-labelledby="research-title"] .resume-item::before {
+      position: absolute;
+      top: 0.25em;
+      left: -0.9mm;
+      width: 1.55mm;
+      height: 1.55mm;
+      border-radius: 50%;
+      background: var(--accent);
+      content: "";
+    }
+
+    body.resume-template-analyst .skill-list {
+      padding-left: 0;
+      display: grid;
+      gap: 0.8mm;
+      list-style: none;
+    }
+
+    body.resume-template-analyst .skill-list li {
+      margin-top: 0;
+      padding: 1mm 1.2mm;
+      border: 0.2mm solid #d7e3da;
+      background: #f8fbf9;
     }
 
     .resume-document {
@@ -1218,6 +1390,37 @@
         transform: none;
       }
 
+      body.print-mode-single.resume-template-modern .resume-body,
+      body.print-mode-auto.resume-template-modern .resume-body {
+        column-gap: 4.2mm;
+        row-gap: 1.3mm;
+      }
+
+      body.print-mode-single.resume-template-modern .resume-section[aria-labelledby="profile-title"] {
+        padding: 1.4mm 2mm;
+      }
+
+      body.print-mode-single.resume-template-executive .resume-body,
+      body.print-mode-auto.resume-template-executive .resume-body {
+        column-gap: 4.5mm;
+        row-gap: 1.35mm;
+      }
+
+      body.print-mode-single.resume-template-executive .resume-section[aria-labelledby="profile-title"] {
+        padding: 1.2mm 0;
+      }
+
+      body.print-mode-single.resume-template-analyst .resume-body,
+      body.print-mode-auto.resume-template-analyst .resume-body {
+        column-gap: 4mm;
+        row-gap: 1.2mm;
+      }
+
+      body.print-mode-single.resume-template-analyst .resume-section[aria-labelledby="experience-title"] .resume-item,
+      body.print-mode-single.resume-template-analyst .resume-section[aria-labelledby="research-title"] .resume-item {
+        padding-left: 3.2mm;
+      }
+
       .resume-header.photo-empty {
         padding-right: 0;
       }
@@ -1273,10 +1476,10 @@
         <label class="template-control" for="templateStyle">
           <span>模板</span>
           <select id="templateStyle" aria-label="选择简历视觉模板">
-            <option value="classic" selected>经典紧凑</option>
-            <option value="modern">现代清爽</option>
-            <option value="executive">商务稳重</option>
-            <option value="analyst">分析师重点</option>
+            <option value="classic" selected>经典单栏</option>
+            <option value="modern">左右分栏</option>
+            <option value="executive">商务模块</option>
+            <option value="analyst">分析师时间轴</option>
           </select>
         </label>
         <label class="print-mode-control" for="printMode">

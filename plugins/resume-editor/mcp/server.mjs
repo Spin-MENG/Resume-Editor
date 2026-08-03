@@ -85,7 +85,13 @@ const defaultContent = {
   "skill-5": "<strong>Awards / Certifications:</strong> Award, certification, license, or notable recognition"
 };
 
-const templateStyles = ["classic", "modern", "executive", "analyst"];
+const templateStyleDescriptions = {
+  classic: "single-column compact resume with conventional section order",
+  modern: "two-column layout with profile across the top, experience/projects in the main column, and education/skills in a sidebar",
+  executive: "modular business layout with profile and main experience as full-width bands plus education/skills in bottom columns",
+  analyst: "analysis-focused layout with skills/education sidebar and timeline styling for experience and projects"
+};
+const templateStyles = Object.keys(templateStyleDescriptions);
 
 const tools = [
   {
@@ -401,6 +407,7 @@ const handlers = {
         }
       },
       templateStyles,
+      templateStyleDescriptions,
       allowedInlineHtml: [...allowedTags],
       fields
     });
@@ -447,7 +454,7 @@ async function handleRequest(message) {
         result: {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: {} },
-          serverInfo: { name: "resume-editor", version: "0.3.1" },
+          serverInfo: { name: "resume-editor", version: "0.3.2" },
           instructions: "Use these tools to develop complete, evidence-based Resume Editor content before one-page prioritization, extract candidate JD signals, flag claims that require verification, and package importable JSON. Do not invent resume facts or present a simulated ATS score."
         }
       };

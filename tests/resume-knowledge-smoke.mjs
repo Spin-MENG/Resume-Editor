@@ -47,6 +47,7 @@ for (const fieldId of ["exp-current-5", "exp-previous-2", "exp-previous-3", "pro
 }
 assert.deepEqual(schemaResponse.result.structuredContent.templateStyles, ["classic", "modern", "executive", "analyst"]);
 assert.equal(schemaResponse.result.structuredContent.importShape.settings.templateStyle, "classic | modern | executive | analyst");
+assert.match(schemaResponse.result.structuredContent.templateStyleDescriptions.modern, /two-column layout/);
 
 const denseContent = Object.fromEntries([
   "exp-current-1", "exp-current-2", "exp-current-3", "exp-current-4",
@@ -120,7 +121,7 @@ const initializeResponse = await handleRequest({
   method: "initialize",
   params: {}
 });
-assert.equal(initializeResponse.result.serverInfo.version, "0.3.1");
+assert.equal(initializeResponse.result.serverInfo.version, "0.3.2");
 
 const chineseJdResponse = await handleRequest({
   jsonrpc: "2.0",

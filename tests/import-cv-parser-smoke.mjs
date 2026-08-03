@@ -11,6 +11,10 @@ for (const templateStyle of ["classic", "modern", "executive", "analyst"]) {
   assert.match(html, new RegExp(`value="${templateStyle}"`), `Missing resume template option ${templateStyle}`);
   assert.match(html, new RegExp(`resume-template-${templateStyle}`), `Missing resume template CSS class ${templateStyle}`);
 }
+assert.match(html, /body\.resume-template-modern \.resume-body\s*\{[\s\S]*grid-template-columns/, "Modern template must define a column layout");
+assert.match(html, /body\.resume-template-modern \.resume-section\[aria-labelledby="education-title"\]/, "Modern template must place education separately");
+assert.match(html, /body\.resume-template-executive \.resume-section\[aria-labelledby="skills-title"\]/, "Executive template must place skills as a module");
+assert.match(html, /body\.resume-template-analyst \.resume-section\[aria-labelledby="experience-title"\] \.resume-item::before/, "Analyst template must define timeline item markers");
 assert.match(html, /function applyTemplateStyle/, "Template style application function must exist");
 assert.match(html, /templateStyle:\s*templateStyle\.value/, "Draft export must preserve the selected template");
 for (const optionalFieldId of ["exp-current-5", "exp-previous-2", "exp-previous-3", "project-one-2", "project-two-2"]) {
